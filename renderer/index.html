@@ -38,83 +38,85 @@
 
     <!-- Main Content Area -->
     <div class="main-content">
-        <!-- Left Panel: Nodes -->
-        <div id="leftPanel" class="left-panel">
-            <div class="panel-header">
-                <h2>NODES</h2>
-            </div>
-            <div class="panel-body">
-                <input type="text" id="nodeSearch" class="node-search" placeholder="Search nodes...">
-
-                <div class="node-category">
-                    <div class="category-title">Input</div>
-                    <div class="node-item" data-node-type="prompt" draggable="true">
-                        Prompt
-                    </div>
-                </div>
-
-                <div class="node-category">
-                    <div class="category-title">Tools</div>
-                    <div class="node-item" data-node-type="tool" draggable="true">
-                        Custom
-                    </div>
-                </div>
-
-                <div class="node-category">
-                    <div class="category-title">LLM</div>
-                    <div class="node-item" data-node-type="model" draggable="true">
-                        Model
-                    </div>
-                </div>
-
-                <div class="node-category">
-                    <div class="category-title">Optimization</div>
-                    <div class="node-item" data-node-type="dspy-optimize" draggable="true">
-                        DSPy
-                    </div>
-                    <div class="node-item" data-node-type="gepa-optimize" draggable="true">
-                        GEPA
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Center: Canvas -->
-        <div id="canvasContainer" class="canvas-container">
-            <canvas id="gridCanvas" class="grid-canvas"></canvas>
-            <svg id="edgesSvg" class="edges-svg"></svg>
-            <div id="nodesLayer" class="nodes-layer"></div>
-        </div>
-
-        <!-- Right Panel: Inspector -->
-        <div id="rightPanel" class="right-panel">
-            <div class="inspector-container">
+        <div class="main-content-top">
+            <!-- Left Panel: Nodes -->
+            <div id="leftPanel" class="left-panel">
                 <div class="panel-header">
-                    <h2>INSPECTOR</h2>
+                    <h2>NODES</h2>
                 </div>
                 <div class="panel-body">
-                    <div id="inspectorContent" class="inspector-content">
-                        <div class="no-selection">No node selected</div>
+                    <input type="text" id="nodeSearch" class="node-search" placeholder="Search nodes...">
+
+                    <div class="node-category">
+                        <div class="category-title">Input</div>
+                        <div class="node-item" data-node-type="prompt" draggable="true">
+                            Prompt
+                        </div>
+                    </div>
+
+                    <div class="node-category">
+                        <div class="category-title">Tools</div>
+                        <div class="node-item" data-node-type="tool" draggable="true">
+                            Custom
+                        </div>
+                    </div>
+
+                    <div class="node-category">
+                        <div class="category-title">LLM</div>
+                        <div class="node-item" data-node-type="model" draggable="true">
+                            Model
+                        </div>
+                    </div>
+
+                    <div class="node-category">
+                        <div class="category-title">Optimization</div>
+                        <div class="node-item" data-node-type="dspy-optimize" draggable="true">
+                            DSPy
+                        </div>
+                        <div class="node-item" data-node-type="gepa-optimize" draggable="true">
+                            GEPA
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Logs Panel (inside inspector) -->
-            <div id="logsPanel" class="logs-panel">
-                <div class="logs-header">
-                    <span class="logs-title">Logs</span>
-                    <div class="logs-actions">
-                        <select id="logsFilter" class="logs-filter">
-                            <option value="all">All</option>
-                            <option value="errors">Errors</option>
-                            <option value="current">Current Run</option>
-                        </select>
-                        <button id="collapseLogsButton" class="logs-icon-button" title="Collapse">−</button>
+            <!-- Center: Canvas -->
+            <div id="canvasContainer" class="canvas-container">
+                <canvas id="gridCanvas" class="grid-canvas"></canvas>
+                <svg id="edgesSvg" class="edges-svg"></svg>
+                <div id="nodesLayer" class="nodes-layer"></div>
+            </div>
+
+            <!-- Right Panel: Inspector -->
+            <div id="rightPanel" class="right-panel">
+                <div class="inspector-container">
+                    <div class="panel-header">
+                        <h2>INSPECTOR</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div id="inspectorContent" class="inspector-content">
+                            <div class="no-selection">No node selected</div>
+                        </div>
                     </div>
                 </div>
-                <div id="logsBody" class="logs-body">
-                    <!-- Log entries will be added here dynamically -->
+            </div>
+        </div>
+
+        <!-- Logs Panel (at bottom of page) -->
+        <div id="logsPanel" class="logs-panel">
+            <div class="logs-header">
+                <span class="logs-title">Logs</span>
+                <div class="logs-actions">
+                    <select id="logsFilter" class="logs-filter">
+                        <option value="all">All</option>
+                        <option value="errors">Errors</option>
+                        <option value="current">Current Run</option>
+                    </select>
+                    <button id="collapseLogsButton" class="logs-icon-button" title="Collapse">−</button>
                 </div>
+            </div>
+            <div id="logsBody" class="logs-body">
+                <!-- Log entries will be added here dynamically -->
             </div>
         </div>
     </div>

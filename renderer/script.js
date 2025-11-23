@@ -86,7 +86,7 @@ const state = {
     logs: [],
     logsFilter: 'all',
     logsCollapsed: false,
-    logsExpandedHeight: 200, // Store the expanded height
+    logsExpandedHeight: 150, // Store the expanded height
 
     // Models
     availableModels: [],
@@ -3073,6 +3073,12 @@ function setupInspectorResize() {
 
         rightPanel.style.width = `${clampedWidth}px`;
 
+        // Update logs panel right position to align with resized inspector panel
+        const logsPanel = document.getElementById('logsPanel');
+        if (logsPanel) {
+            logsPanel.style.right = `${clampedWidth}px`;
+        }
+
         // Re-truncate log messages to fit the new panel width
         truncateLongTokensInLogs();
     });
@@ -3121,13 +3127,13 @@ function setupLogsResize() {
         const deltaY = startY - e.clientY; // Note: reversed because we're dragging top edge
         const newHeight = startHeight + deltaY;
 
-        // Calculate max height based on inspector header bottom edge
-        const inspectorHeader = document.querySelector('.inspector-container .panel-header');
+        // Calculate max height based on main-content-top area
+        const mainContentTop = document.querySelector('.main-content-top');
         const logsPanelRect = logsPanel.getBoundingClientRect();
-        const inspectorHeaderRect = inspectorHeader.getBoundingClientRect();
+        const mainContentTopRect = mainContentTop.getBoundingClientRect();
 
-        // Max height for logs panel: distance from inspector header bottom to logs panel bottom
-        const maxHeight = logsPanelRect.bottom - inspectorHeaderRect.bottom;
+        // Max height for logs panel: height of the main-content-top area
+        const maxHeight = mainContentTopRect.height;
 
         // Clamp between min and max height (min is header height: 36px)
         const minHeight = 36;

@@ -105,8 +105,20 @@ body.panning {
 
 .main-content {
     display: flex;
+    flex-direction: column;
     flex: 1;
     overflow: hidden;
+    position: relative;
+}
+
+.main-content-top {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    background: #1a1a1a;
+    position: relative;
+    z-index: 1;
+    min-height: 0;
 }
 
 /* ============================================================================
@@ -510,6 +522,7 @@ body.panning {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    height: 100%; /* Ensure inspector takes full height of right panel */
 }
 
 .right-panel .panel-header {
@@ -604,15 +617,18 @@ body.panning {
    ============================================================================ */
 
 .logs-panel {
-    height: 200px;
+    height: 150px;
     min-height: 36px; /* Just header when collapsed */
-    max-height: 600px;
+    max-height: 400px;
     background: #252525;
     border-top: 1px solid #3a3a3a;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
-    position: relative;
+    position: absolute;
+    bottom: 0;
+    left: 220px; /* Width of left panel */
+    right: 280px; /* Width of right panel (default) */
+    z-index: 2;
     transition: height 0.2s ease-out;
 }
 
