@@ -196,46 +196,19 @@ function renderDSPyOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
                 <label>Optimization Results</label>
                 <div style="background: #1a1a1a; padding: 12px; border-radius: 4px; font-size: 12px;">
                     <div style="margin-bottom: 8px;">
-                        <strong style="color: #4a9eff;">Validation Score:</strong>
+                        <strong style="color: #4a9eff;">Final Score:</strong>
                         <span style="color: #4a9eff;">${(node.data.validationScore * 100).toFixed(1)}%</span>
                     </div>
                     ${node.data.optimizedSignature && Object.keys(node.data.optimizedSignature).length > 0 ? `
-                        <div style="margin-bottom: 8px;">
-                            <strong>Optimized Instructions:</strong>
+                        <div>
+                            <strong>Optimized Prompt:</strong>
                             ${Object.entries(node.data.optimizedSignature).map(([name, instruction]) =>
                                 `<div style="margin-top: 4px; color: #888;">${name}: ${instruction}</div>`
                             ).join('')}
                         </div>
                     ` : ''}
-                    <div>
-                        <strong>Demos Generated:</strong> ${node.data.optimizedDemos.length}
-                    </div>
                 </div>
             </div>
-
-            <!-- Show sample demos -->
-            ${node.data.optimizedDemos.length > 0 ? `
-                <div class="inspector-section">
-                    <div style="cursor: pointer; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center;" id="demosToggle">
-                        <svg class="details-toggle" width="12" height="12" style="margin-right: 6px;">
-                            <use href="#icon-chevron-right"></use>
-                        </svg>
-                        Sample Demonstrations
-                    </div>
-                    <div id="demosContent" style="display: none;">
-                        <div style="margin-top: 8px; max-height: 200px; overflow-y: auto;">
-                            ${node.data.optimizedDemos.slice(0, 5).map((demo, i) => `
-                                <div style="background: #1a1a1a; padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 11px;">
-                                    <div style="color: #888;">Demo ${i + 1}:</div>
-                                    <div style="margin-top: 4px;"><strong>Input:</strong> ${demo.input}</div>
-                                    <div style="margin-top: 4px;"><strong>Output:</strong> ${demo.output}</div>
-                                </div>
-                            `).join('')}
-                            ${node.data.optimizedDemos.length > 5 ? `<div style="color: #888; font-size: 10px;">... and ${node.data.optimizedDemos.length - 5} more</div>` : ''}
-                        </div>
-                    </div>
-                </div>
-            ` : ''}
         ` : ''}
 
         <!-- Action Buttons -->
@@ -332,20 +305,6 @@ function renderDSPyOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             if (applyButton && context) {
                 applyButton.addEventListener('click', () => {
                     applyOptimizedPrompt(node, context.edges, context.nodes, context.addLog, context.updateNodeDisplay);
-                });
-            }
-
-            // Handle collapsible sections
-            const demosToggle = document.getElementById('demosToggle');
-            const demosContent = document.getElementById('demosContent');
-            if (demosToggle && demosContent) {
-                demosToggle.addEventListener('click', () => {
-                    const isOpen = demosContent.style.display !== 'none';
-                    demosContent.style.display = isOpen ? 'none' : 'block';
-                    const svg = demosToggle.querySelector('.details-toggle use');
-                    if (svg) {
-                        svg.setAttribute('href', isOpen ? '#icon-chevron-right' : '#icon-chevron-down');
-                    }
                 });
             }
         }

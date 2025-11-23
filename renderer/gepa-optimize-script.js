@@ -35,8 +35,7 @@ function createGepaOptimizeNodeData() {
         initialScore: 0,
         finalScore: 0,
         optimizedPromptText: '',
-        optimizationIterations: 0,
-        optimizationLog: []               // Progress messages
+        optimizationIterations: 0
     };
 }
 
@@ -93,7 +92,6 @@ function renderGepaOptimizeNode(node, edges, nodes) {
             <div class="node-description">
                 <div>GEPA optimization</div>
                 <div style="font-size: 10px; color: #888; margin-top: 4px;">${datasetInfo}</div>
-                ${improvement !== null ? `<div style="font-size: 10px; color: #4a9eff; margin-top: 2px;">+${improvement}% improvement</div>` : ''}
             </div>
 
             <div class="node-output-viewer">${getOptimizedPromptText(node)}</div>
@@ -155,67 +153,18 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             <div class="inspector-section">
                 <label>Optimization Results</label>
                 <div style="background: #1a1a1a; padding: 12px; border-radius: 4px; font-size: 12px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <div>
-                            <strong>Initial Score:</strong>
-                            <span style="color: #888;">${(node.data.initialScore * 100).toFixed(1)}%</span>
-                        </div>
-                        <div>
-                            <strong style="color: #4a9eff;">Final Score:</strong>
-                            <span style="color: #4a9eff;">${(node.data.finalScore * 100).toFixed(1)}%</span>
-                        </div>
-                    </div>
                     <div style="margin-bottom: 8px;">
-                        <strong>Improvement:</strong>
-                        <span style="color: ${node.data.finalScore > node.data.initialScore ? '#28a745' : '#888'};">
-                            ${node.data.finalScore > node.data.initialScore ? '+' : ''}${((node.data.finalScore - node.data.initialScore) * 100).toFixed(1)}%
-                        </span>
+                        <strong style="color: #4a9eff;">Final Score:</strong>
+                        <span style="color: #4a9eff;">${(node.data.finalScore * 100).toFixed(1)}%</span>
                     </div>
-                    ${node.data.optimizationIterations > 0 ? `
+                    ${node.data.optimizedPromptText ? `
                         <div>
-                            <strong>Iterations:</strong> ${node.data.optimizationIterations}
+                            <strong>Optimized Prompt:</strong>
+                            <div style="margin-top: 4px; color: #888;">${node.data.optimizedPromptText}</div>
                         </div>
                     ` : ''}
                 </div>
             </div>
-
-            <!-- Optimized Prompt Preview -->
-            ${node.data.optimizedPromptText ? `
-                <div class="inspector-section">
-                    <div style="cursor: pointer; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center;" id="promptToggle">
-                        <svg class="details-toggle" width="12" height="12" style="margin-right: 6px;">
-                            <use href="#icon-chevron-right"></use>
-                        </svg>
-                        Optimized Prompt
-                    </div>
-                    <div id="promptContent" style="display: none;">
-                        <div style="background: #1a1a1a; padding: 8px; border-radius: 4px; font-size: 11px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; font-family: monospace;">
-                            ${node.data.optimizedPromptText}
-                        </div>
-                    </div>
-                </div>
-            ` : ''}
-
-            <!-- Optimization Log -->
-            ${node.data.optimizationLog.length > 0 ? `
-                <div class="inspector-section">
-                    <div style="cursor: pointer; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center;" id="logToggle">
-                        <svg class="details-toggle" width="12" height="12" style="margin-right: 6px;">
-                            <use href="#icon-chevron-right"></use>
-                        </svg>
-                        Optimization Log
-                    </div>
-                    <div id="logContent" style="display: none;">
-                        <div style="margin-top: 8px; max-height: 200px; overflow-y: auto;">
-                            ${node.data.optimizationLog.map(msg => `
-                                <div style="background: #1a1a1a; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 10px; color: #888;">
-                                    ${msg}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            ` : ''}
         ` : ''}
 
         <!-- Action Buttons -->
@@ -305,26 +254,6 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
                 });
             }
 
-            // Handle collapsible sections
-            const toggles = [
-                { toggle: 'promptToggle', content: 'promptContent' },
-                { toggle: 'logToggle', content: 'logContent' }
-            ];
-
-            toggles.forEach(({ toggle, content }) => {
-                const toggleEl = document.getElementById(toggle);
-                const contentEl = document.getElementById(content);
-                if (toggleEl && contentEl) {
-                    toggleEl.addEventListener('click', () => {
-                        const isOpen = contentEl.style.display !== 'none';
-                        contentEl.style.display = isOpen ? 'none' : 'block';
-                        const svg = toggleEl.querySelector('.details-toggle use');
-                        if (svg) {
-                            svg.setAttribute('href', isOpen ? '#icon-chevron-right' : '#icon-chevron-down');
-                        }
-                    });
-                }
-            });
         }
     };
 }
@@ -480,8 +409,7 @@ function applyOptimizedPrompt(gepaOptimizeNode, edges, nodes, addLog, updateNode
         updateNodeDisplay(promptNode.id);
 
         const improvement = ((gepaOptimizeNode.data.finalScore - gepaOptimizeNode.data.initialScore) * 100).toFixed(1);
-        addLog('info', `Applied optimized prompt to prompt node (+${improvement}% improvement)`, gepaOptimizeNode.id);
-        addLog('info', `New system prompt: "${optimizedText.substring(0, 200)}${optimizedText.length > 200 ? '...' : ''}"`, gepaOptimizeNode.id);
+        addLog('info', `Applied optimized prompt (+${improvement}% improvement)`, gepaOptimizeNode.id);
     } else {
         addLog('warning', 'No optimized prompt text found in optimization results', gepaOptimizeNode.id);
     }
@@ -529,7 +457,6 @@ async function executeGepaOptimizeNode(
     // Set running status
     setNodeStatus(gepaOptimizeNode.id, 'running');
     gepaOptimizeNode.data.optimizationStatus = 'running';
-    gepaOptimizeNode.data.optimizationLog = [];
     updateNodeDisplay(gepaOptimizeNode.id);
 
     addLog('info', 'Starting GEPA optimization...', gepaOptimizeNode.id);
@@ -546,9 +473,7 @@ async function executeGepaOptimizeNode(
         const inputKeys = Object.keys(firstExample?.inputs || {});
         const inputKey = inputKeys.length > 0 ? inputKeys[0] : 'question';
         initialPrompt = `Answer the following ${inputKey}: {{${inputKey}}}`;
-        addLog('info', `No system prompt found - using default template: "${initialPrompt}"`, gepaOptimizeNode.id);
-    } else {
-        addLog('info', `Using system prompt from connected prompt node`, gepaOptimizeNode.id);
+        addLog('warning', `No system prompt found - using default template`, gepaOptimizeNode.id);
     }
 
     try {
@@ -556,8 +481,6 @@ async function executeGepaOptimizeNode(
         const provider = modelNode.data.provider || 'ollama';
         const modelName = modelNode.data.model;
         const mlflowModelString = `${provider}:/${modelName}`;
-
-        addLog('info', `Using connected model for optimization: ${mlflowModelString}`, gepaOptimizeNode.id);
 
         // Build configuration for Python worker
         const config = {
@@ -582,9 +505,7 @@ async function executeGepaOptimizeNode(
 
         // Execute optimization with progress callback
         const result = await executeGepaOptimization(config, (message, data) => {
-            addLog('info', `GEPA: ${message}`, gepaOptimizeNode.id);
-            gepaOptimizeNode.data.optimizationLog.push(message);
-            updateNodeDisplay(gepaOptimizeNode.id);
+            // Progress messages go to logs panel without storing
         }, signal);
 
         // Update node with results
