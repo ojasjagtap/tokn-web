@@ -141,3 +141,10 @@ vite.config.ts.timestamp-*
 
 .claude
 PRODUCT_ROADMAP.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python

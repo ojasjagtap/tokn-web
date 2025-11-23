@@ -30,6 +30,15 @@ const {
     executeDSPyOptimizeNode
 } = require('./dspy-optimize-script');
 const { checkDSPyEnvironment } = require('./dspy-worker');
+const {
+    createGepaOptimizeNodeData,
+    renderGepaOptimizeNode,
+    renderGepaOptimizeInspector,
+    isValidGepaOptimizeConnection,
+    validateGepaOptimizeNode,
+    executeGepaOptimizeNode
+} = require('./gepa-optimize-script');
+const { checkGepaEnvironment } = require('./gepa-worker');
 const { executeToolInWorker } = require('./tool-worker-launcher');
 
 // ============================================================================
@@ -357,6 +366,20 @@ function createNode(type, worldX, worldY) {
         }).catch(err => {
             addLog('warn', `Unable to check DSPy dependencies: ${err.message}`);
         });
+    } else if (type === 'gepa-optimize') {
+        node.data = createGepaOptimizeNodeData();
+        // Check GEPA/MLflow dependencies when node is created
+        checkGepaEnvironment().then(envCheck => {
+            if (!envCheck.mlflow_installed) {
+                const pythonCmd = process.platform === 'win32'
+                    ? 'C:\\Users\\ojasj\\AppData\\Local\\Programs\\Python\\Python311\\python.exe'
+                    : 'python3';
+                const installCmd = `${pythonCmd} -m pip install mlflow>=3.5.0`;
+                addLog('warn', `MLflow dependencies not found. Please install them by running: ${installCmd}`);
+            }
+        }).catch(err => {
+            addLog('warn', `Unable to check MLflow dependencies: ${err.message}`);
+        });
     } else if (type === 'tool') {
         node.data = createToolNodeData();
     }
@@ -519,6 +542,8 @@ function renderNode(id) {
         nodeEl.innerHTML = renderEvolutionaryOptimizeNode(node, state.edges, state.nodes);
     } else if (node.type === 'dspy-optimize') {
         nodeEl.innerHTML = renderDSPyOptimizeNode(node, state.edges, state.nodes);
+    } else if (node.type === 'gepa-optimize') {
+        nodeEl.innerHTML = renderGepaOptimizeNode(node, state.edges, state.nodes);
     } else if (node.type === 'tool') {
         const connectedModels = findConnectedModels(node.id, state.edges, state.nodes);
         nodeEl.innerHTML = renderToolNode(node, connectedModels);
@@ -659,6 +684,11 @@ function isValidConnection(sourceNodeId, sourcePin, targetNodeId, targetPin) {
 
     // Check DSPy optimize connections
     if (isValidDSPyOptimizeConnection(sourceNode, sourcePin, targetNode, targetPin, state.edges)) {
+        return true;
+    }
+
+    // Check GEPA optimize connections
+    if (isValidGepaOptimizeConnection(sourceNode, sourcePin, targetNode, targetPin, state.edges)) {
         return true;
     }
 
@@ -985,6 +1015,16 @@ function updateInspector() {
         });
     } else if (node.type === 'dspy-optimize') {
         const inspector = renderDSPyOptimizeInspector(node, updateNodeDisplay, state.edges, state.nodes, state);
+        inspectorContent.innerHTML = inspector.html;
+        inspector.setupListeners({
+            runOptimizeNode,
+            edges: state.edges,
+            nodes: state.nodes,
+            addLog,
+            updateNodeDisplay
+        });
+    } else if (node.type === 'gepa-optimize') {
+        const inspector = renderGepaOptimizeInspector(node, updateNodeDisplay, state.edges, state.nodes, state);
         inspectorContent.innerHTML = inspector.html;
         inspector.setupListeners({
             runOptimizeNode,
@@ -1545,6 +1585,21 @@ async function runFlow() {
                 hasError = true;
             }
         }
+
+        // Validate GEPA Optimize nodes that will run in the flow
+        if (sourceNode?.type === 'model' &&
+            targetNode?.type === 'gepa-optimize' &&
+            edge.sourcePin === 'output' &&
+            edge.targetPin === 'input') {
+
+            const validationErrors = validateGepaOptimizeNode(targetNode, state.edges, state.nodes);
+            if (validationErrors.length > 0) {
+                for (const error of validationErrors) {
+                    addLog('error', error, targetNode.id);
+                }
+                hasError = true;
+            }
+        }
     }
 
     if (hasError) {
@@ -1770,9 +1825,9 @@ function findOptimizeNodesToRun(edges, nodes) {
         const sourceNode = nodes.get(edge.sourceNodeId);
         const targetNode = nodes.get(edge.targetNodeId);
 
-        // Find Model → Optimize connections (including both evolutionary-optimize and dspy-optimize nodes)
+        // Find Model → Optimize connections (including all optimize node types)
         if (sourceNode?.type === 'model' &&
-            (targetNode?.type === 'evolutionary-optimize' || targetNode?.type === 'dspy-optimize') &&
+            (targetNode?.type === 'evolutionary-optimize' || targetNode?.type === 'dspy-optimize' || targetNode?.type === 'gepa-optimize') &&
             edge.sourcePin === 'output' &&
             edge.targetPin === 'input') {
             optimizeNodes.push(targetNode);
@@ -1787,7 +1842,7 @@ function findOptimizeNodesToRun(edges, nodes) {
  */
 async function runOptimizeNode(nodeId) {
     const optimizeNode = state.nodes.get(nodeId);
-    if (!optimizeNode || (optimizeNode.type !== 'evolutionary-optimize' && optimizeNode.type !== 'dspy-optimize')) return;
+    if (!optimizeNode || (optimizeNode.type !== 'evolutionary-optimize' && optimizeNode.type !== 'dspy-optimize' && optimizeNode.type !== 'gepa-optimize')) return;
 
     // Disable run buttons
     state.isOptimizing = true;
@@ -1815,6 +1870,16 @@ async function runOptimizeNode(nodeId) {
             );
         } else if (optimizeNode.type === 'dspy-optimize') {
             await executeDSPyOptimizeNode(
+                optimizeNode,
+                state.edges,
+                state.nodes,
+                updateNodeDisplay,
+                setNodeStatus,
+                addLog,
+                state.optimizationAbortController.signal
+            );
+        } else if (optimizeNode.type === 'gepa-optimize') {
+            await executeGepaOptimizeNode(
                 optimizeNode,
                 state.edges,
                 state.nodes,
