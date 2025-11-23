@@ -628,7 +628,7 @@ body.panning {
     bottom: 0;
     left: 220px; /* Width of left panel */
     right: 280px; /* Width of right panel (default) */
-    z-index: 2;
+    z-index: 10; /* Above main-content-top (z-index: 1) but below modals */
     transition: height 0.2s ease-out;
 }
 
