@@ -459,8 +459,28 @@ def main():
         # Use a local directory for tracking
         mlruns_dir = os.path.join(tempfile.gettempdir(), 'mlflow_gepa_tracking')
         os.makedirs(mlruns_dir, exist_ok=True)
-        mlflow.set_tracking_uri(f"file://{mlruns_dir}")
+
+        # Format tracking URI for cross-platform compatibility
+        # Convert Windows path separators to forward slashes for file URI
+        tracking_path = mlruns_dir.replace('\\', '/')
+        # Use file:/// (three slashes) for local file URIs
+        mlflow.set_tracking_uri(f"file:///{tracking_path}")
         log_progress(f"Initialized MLflow tracking at: {mlruns_dir}")
+
+        # Create or set experiment (required for optimization tracking)
+        experiment_name = "gepa_optimization"
+        try:
+            experiment = mlflow.get_experiment_by_name(experiment_name)
+            if experiment is None:
+                experiment_id = mlflow.create_experiment(experiment_name)
+                log_progress(f"Created MLflow experiment: {experiment_name}")
+            else:
+                experiment_id = experiment.experiment_id
+                log_progress(f"Using existing MLflow experiment: {experiment_name}")
+            mlflow.set_experiment(experiment_name)
+        except Exception as e:
+            log_progress(f"Warning: Could not set experiment: {str(e)}")
+            # Continue anyway - MLflow will use default experiment
 
         # Step 4: Prepare dataset
         log_progress("Preparing dataset...")
