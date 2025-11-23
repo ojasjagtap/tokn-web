@@ -20,16 +20,11 @@ function createGepaOptimizeNodeData() {
         title: 'GEPA',
 
         // Optimizer Configuration
-        reflectionModel: 'openai/gpt-4',  // Model for reflection/evolution
         maxMetricCalls: 300,              // Optimization budget (iterations)
 
         // Scorer Configuration
         scorerType: 'correctness',        // 'correctness' | 'safety'
-        scorerModel: 'openai/gpt-4-mini', // Model for scoring
         useMultipleScorers: false,
-        scorers: [
-            { type: 'correctness', model: 'openai/gpt-4-mini', weight: 1.0 }
-        ],
 
         // Dataset Management
         trainDataset: [],                 // Array of {inputs: {...}, expectations: {expected_response: '...'}}
@@ -41,11 +36,7 @@ function createGepaOptimizeNodeData() {
         finalScore: 0,
         optimizedPromptText: '',
         optimizationIterations: 0,
-        optimizationLog: [],              // Progress messages
-
-        // MLflow Integration (optional)
-        mlflowTrackingUri: '',
-        experimentName: ''
+        optimizationLog: []               // Progress messages
     };
 }
 
@@ -128,17 +119,6 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             <input type="text" id="inspectorTitle" class="inspector-input" value="${node.data.title}">
         </div>
 
-        <!-- Reflection Model -->
-        <div class="inspector-section">
-            <label>Reflection Model</label>
-            <input type="text" id="inspectorReflectionModel" class="inspector-input"
-                   value="${node.data.reflectionModel}"
-                   placeholder="openai/gpt-4">
-            <div style="font-size: 10px; color: #888; margin-top: 4px;">
-                LLM used for prompt evolution (e.g., openai/gpt-4, anthropic/claude-3-sonnet)
-            </div>
-        </div>
-
         <!-- Max Metric Calls -->
         <div class="inspector-section">
             <label>Max Metric Calls (Budget)</label>
@@ -148,9 +128,6 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
                        value="${node.data.maxMetricCalls}"
                        style="flex: 1;">
                 <span id="maxMetricCallsValue" style="min-width: 50px; text-align: right;">${node.data.maxMetricCalls}</span>
-            </div>
-            <div style="font-size: 10px; color: #888; margin-top: 4px;">
-                Higher = better results, but slower and more expensive
             </div>
         </div>
 
@@ -163,49 +140,13 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             </select>
         </div>
 
-        <div class="inspector-section">
-            <label>Scorer Model</label>
-            <input type="text" id="inspectorScorerModel" class="inspector-input"
-                   value="${node.data.scorerModel}"
-                   placeholder="openai/gpt-4-mini">
-            <div style="font-size: 10px; color: #888; margin-top: 4px;">
-                Model used to evaluate prompt quality
-            </div>
-        </div>
-
         <!-- Training Dataset -->
         <div class="inspector-section">
             <label>Training Dataset (JSON)</label>
             <textarea id="inspectorTrainDataset" class="inspector-textarea code-editor" rows="10"
                       placeholder='[&#10;  {&#10;    "inputs": {"question": "What is 2+2?"},&#10;    "expectations": {"expected_response": "4"}&#10;  }&#10;]'>${JSON.stringify(node.data.trainDataset, null, 2)}</textarea>
             <div style="font-size: 10px; color: #888; margin-top: 4px;">
-                ${node.data.trainDataset.length} examples (MLflow format: inputs + expectations)
-            </div>
-        </div>
-
-        <!-- MLflow Settings (Optional) -->
-        <div class="inspector-section">
-            <div style="cursor: pointer; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center;" id="mlflowToggle">
-                <svg class="details-toggle" width="12" height="12" style="margin-right: 6px;">
-                    <use href="#icon-chevron-right"></use>
-                </svg>
-                MLflow Settings (Optional)
-            </div>
-            <div id="mlflowContent" style="display: none;">
-                <div style="margin-bottom: 12px;">
-                    <label style="font-size: 12px;">Tracking URI</label>
-                    <input type="text" id="inspectorMlflowUri" class="inspector-input"
-                           value="${node.data.mlflowTrackingUri}"
-                           placeholder="http://localhost:5000"
-                           style="margin-top: 4px;">
-                </div>
-                <div>
-                    <label style="font-size: 12px;">Experiment Name</label>
-                    <input type="text" id="inspectorExperimentName" class="inspector-input"
-                           value="${node.data.experimentName}"
-                           placeholder="prompt_optimization"
-                           style="margin-top: 4px;">
-                </div>
+                ${node.data.trainDataset.length} examples
             </div>
         </div>
 
@@ -282,7 +223,7 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             <button id="inspectorRunOptimize" class="inspector-button"
                     style="width: 100%; padding: 10px; background: ${buttonDisabled ? '#6c757d' : '#4a9eff'}; color: white; border: none; border-radius: 4px; cursor: ${buttonDisabled ? 'not-allowed' : 'pointer'}; font-size: 14px; opacity: ${buttonDisabled ? '0.6' : '1'};"
                     ${buttonDisabled ? 'disabled' : ''}>
-                Run Optimization
+                Run
             </button>
         </div>
 
@@ -290,7 +231,7 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             <button id="inspectorApplyToPrompt" class="inspector-button"
                     style="width: 100%; padding: 10px; background: ${applyButtonDisabled ? '#6c757d' : '#28a745'}; color: white; border: none; border-radius: 4px; cursor: ${applyButtonDisabled ? 'not-allowed' : 'pointer'}; font-size: 14px; opacity: ${applyButtonDisabled ? '0.6' : '1'};"
                     ${applyButtonDisabled ? 'disabled' : ''}>
-                Apply to Prompt
+                Apply
             </button>
         </div>
     `;
@@ -304,11 +245,6 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
                 updateNodeDisplay(node.id);
             });
 
-            // Reflection Model
-            document.getElementById('inspectorReflectionModel').addEventListener('input', (e) => {
-                node.data.reflectionModel = e.target.value;
-            });
-
             // Max Metric Calls
             const maxMetricCallsSlider = document.getElementById('inspectorMaxMetricCalls');
             const maxMetricCallsValue = document.getElementById('maxMetricCallsValue');
@@ -320,19 +256,6 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             // Scorer Type
             document.getElementById('inspectorScorerType').addEventListener('change', (e) => {
                 node.data.scorerType = e.target.value;
-                // Update the main scorer in the array
-                if (node.data.scorers.length > 0) {
-                    node.data.scorers[0].type = e.target.value;
-                }
-            });
-
-            // Scorer Model
-            document.getElementById('inspectorScorerModel').addEventListener('input', (e) => {
-                node.data.scorerModel = e.target.value;
-                // Update the main scorer in the array
-                if (node.data.scorers.length > 0) {
-                    node.data.scorers[0].model = e.target.value;
-                }
             });
 
             // Training Dataset
@@ -347,22 +270,6 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
                     // Invalid JSON, keep old value
                 }
             });
-
-            // MLflow Settings
-            const mlflowUriInput = document.getElementById('inspectorMlflowUri');
-            const experimentNameInput = document.getElementById('inspectorExperimentName');
-
-            if (mlflowUriInput) {
-                mlflowUriInput.addEventListener('input', (e) => {
-                    node.data.mlflowTrackingUri = e.target.value;
-                });
-            }
-
-            if (experimentNameInput) {
-                experimentNameInput.addEventListener('input', (e) => {
-                    node.data.experimentName = e.target.value;
-                });
-            }
 
             // Run Optimization Button
             const runButton = document.getElementById('inspectorRunOptimize');
@@ -391,7 +298,6 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
 
             // Handle collapsible sections
             const toggles = [
-                { toggle: 'mlflowToggle', content: 'mlflowContent' },
                 { toggle: 'promptToggle', content: 'promptContent' },
                 { toggle: 'logToggle', content: 'logContent' }
             ];
@@ -497,11 +403,6 @@ function validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes) {
                 errors.push(`Training dataset example ${i + 1} missing 'expectations.expected_response' field`);
             }
         }
-    }
-
-    // Check reflection model
-    if (!gepaOptimizeNode.data.reflectionModel || gepaOptimizeNode.data.reflectionModel.trim() === '') {
-        errors.push('Reflection model is required (e.g., "openai/gpt-4")');
     }
 
     // Check model node is connected
@@ -617,27 +518,32 @@ async function executeGepaOptimizeNode(
     }
 
     try {
+        // Build model string for MLflow format (provider/model)
+        const provider = modelNode.data.provider || 'ollama';
+        const modelName = modelNode.data.model;
+        const mlflowModelString = `${provider}/${modelName}`;
+
+        addLog('info', `Using connected model for optimization: ${mlflowModelString}`, gepaOptimizeNode.id);
+
         // Build configuration for Python worker
         const config = {
             model_config: {
-                provider: modelNode.data.provider || 'ollama',
-                model: modelNode.data.model,
+                provider: provider,
+                model: modelName,
                 api_key: modelNode.data.apiKey || ''
             },
             initial_prompt: initialPrompt,
-            reflection_model: gepaOptimizeNode.data.reflectionModel,
+            reflection_model: mlflowModelString,  // Use connected model for reflection
             max_metric_calls: gepaOptimizeNode.data.maxMetricCalls,
             scorer_config: {
-                scorers: gepaOptimizeNode.data.scorers.map(s => ({
-                    type: s.type,
-                    model: s.model,
-                    weight: s.weight || 1.0
-                }))
+                scorers: [{
+                    type: gepaOptimizeNode.data.scorerType,
+                    model: mlflowModelString,  // Use connected model for scoring
+                    weight: 1.0
+                }]
             },
             train_dataset: gepaOptimizeNode.data.trainDataset,
-            prompt_name: `gepa_prompt_${gepaOptimizeNode.id}`,
-            mlflow_tracking_uri: gepaOptimizeNode.data.mlflowTrackingUri || null,
-            experiment_name: gepaOptimizeNode.data.experimentName || null
+            prompt_name: `gepa_prompt_${gepaOptimizeNode.id}`
         };
 
         // Execute optimization with progress callback

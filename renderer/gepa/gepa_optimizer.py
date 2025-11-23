@@ -455,24 +455,15 @@ def main():
                 "MLflow library not found. Please install it with: pip install mlflow>=3.5.0"
             )
 
-        # Step 3: Setup MLflow tracking (optional)
-        if config.get('mlflow_tracking_uri'):
-            mlflow.set_tracking_uri(config['mlflow_tracking_uri'])
-            log_progress(f"MLflow tracking URI: {config['mlflow_tracking_uri']}")
-
-        if config.get('experiment_name'):
-            mlflow.set_experiment(config['experiment_name'])
-            log_progress(f"MLflow experiment: {config['experiment_name']}")
-
-        # Step 4: Prepare dataset
+        # Step 3: Prepare dataset
         log_progress("Preparing dataset...")
         train_data = prepare_dataset(config['train_dataset'], 'train_dataset')
 
-        # Step 5: Extract initial prompt template
+        # Step 4: Extract initial prompt template
         initial_prompt = config.get('initial_prompt', 'Answer the following question: {{question}}')
         log_progress(f"Initial prompt template: {initial_prompt[:100]}...")
 
-        # Step 6: Determine input key from dataset
+        # Step 5: Determine input key from dataset
         # Extract the first input key from the dataset
         input_key = 'question'  # default
         if train_data and 'inputs' in train_data[0]:
@@ -481,11 +472,11 @@ def main():
                 input_key = input_keys[0]
                 log_progress(f"Detected input key: {input_key}")
 
-        # Step 7: Register prompt with MLflow
+        # Step 6: Register prompt with MLflow
         prompt_name = config.get('prompt_name', f'gepa_prompt_{os.getpid()}')
         prompt = register_prompt_with_mlflow(prompt_name, initial_prompt)
 
-        # Step 8: Create prediction function
+        # Step 7: Create prediction function
         log_progress("Creating prediction function...")
         model_config = config['model_config']
 
@@ -527,7 +518,7 @@ def main():
             else:
                 raise ValueError(f"Unsupported provider: {provider}")
 
-        # Step 9: Create scorers
+        # Step 8: Create scorers
         log_progress("Creating scorers...")
         scorer_config = config.get('scorer_config', {'scorers': [{'type': 'correctness'}]})
         scorers = create_scorers(scorer_config)
@@ -535,7 +526,7 @@ def main():
 
         log_progress(f"Using {len(scorers)} scorer(s)")
 
-        # Step 10: Run GEPA optimization
+        # Step 9: Run GEPA optimization
         reflection_model = config.get('reflection_model', 'openai/gpt-4')
         max_metric_calls = config.get('max_metric_calls', 300)
 
@@ -549,10 +540,10 @@ def main():
             aggregation=aggregation
         )
 
-        # Step 11: Extract results
+        # Step 10: Extract results
         extracted = extract_optimization_results(result)
 
-        # Step 12: Return success result
+        # Step 11: Return success result
         improvement = extracted['final_score'] - extracted['initial_score']
         log_progress(f"Optimization complete! Score improved by {improvement:+.3f}")
 
