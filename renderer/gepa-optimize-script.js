@@ -276,9 +276,18 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             if (runButton && context && context.runOptimizeNode) {
                 runButton.addEventListener('click', async () => {
                     // Validate before running
-                    const errors = validateGepaOptimizeNode(node, context.edges, context.nodes);
-                    if (errors.length > 0) {
-                        errors.forEach(error => {
+                    const validation = validateGepaOptimizeNode(node, context.edges, context.nodes);
+
+                    // Show warnings
+                    if (validation.warnings && validation.warnings.length > 0) {
+                        validation.warnings.forEach(warning => {
+                            context.addLog('warning', warning, node.id);
+                        });
+                    }
+
+                    // Show errors and stop if any
+                    if (validation.errors && validation.errors.length > 0) {
+                        validation.errors.forEach(error => {
                             context.addLog('error', error, node.id);
                         });
                         return;
@@ -382,10 +391,17 @@ function findPromptNodeForModel(modelNodeId, edges, nodes) {
 }
 
 /**
+ * MLflow GEPA natively supported providers
+ * Other providers may work via LiteLLM if installed (pip install litellm)
+ */
+const GEPA_NATIVE_PROVIDERS = ['openai', 'anthropic', 'bedrock', 'mistral', 'togetherai'];
+
+/**
  * Validate GEPA optimize node and return error messages
  */
 function validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes) {
     const errors = [];
+    const warnings = [];
 
     // Check training dataset
     if (!gepaOptimizeNode.data.trainDataset || gepaOptimizeNode.data.trainDataset.length === 0) {
@@ -409,17 +425,28 @@ function validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes) {
     const modelNode = findConnectedModelNode(gepaOptimizeNode.id, edges, nodes);
     if (!modelNode) {
         errors.push('No model node connected to GEPA optimize node');
+    } else {
+        // Warn if provider is not natively supported
+        const provider = modelNode.data.provider || 'ollama';
+        if (!GEPA_NATIVE_PROVIDERS.includes(provider)) {
+            warnings.push(
+                `Warning: '${provider}' is not natively supported by MLflow GEPA. ` +
+                `Natively supported providers: ${GEPA_NATIVE_PROVIDERS.join(', ')}. ` +
+                `You may be able to use '${provider}' if you have LiteLLM installed (pip install litellm), but it is not guaranteed to work.`
+            );
+        }
     }
 
-    return errors;
+    // Return both errors and warnings
+    return { errors, warnings };
 }
 
 /**
  * Check if GEPA optimize node is ready to run
  */
 function isGepaOptimizeNodeReady(gepaOptimizeNode, edges, nodes) {
-    const errors = validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes);
-    return errors.length === 0;
+    const validation = validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes);
+    return validation.errors.length === 0;
 }
 
 /**
@@ -477,9 +504,16 @@ async function executeGepaOptimizeNode(
     signal
 ) {
     // Validate prerequisites
-    const errors = validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes);
-    if (errors.length > 0) {
-        errors.forEach(error => addLog('error', error, gepaOptimizeNode.id));
+    const validation = validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes);
+
+    // Log warnings
+    if (validation.warnings && validation.warnings.length > 0) {
+        validation.warnings.forEach(warning => addLog('warning', warning, gepaOptimizeNode.id));
+    }
+
+    // Check for errors
+    if (validation.errors && validation.errors.length > 0) {
+        validation.errors.forEach(error => addLog('error', error, gepaOptimizeNode.id));
         setNodeStatus(gepaOptimizeNode.id, 'error');
         return;
     }
@@ -518,10 +552,10 @@ async function executeGepaOptimizeNode(
     }
 
     try {
-        // Build model string for MLflow format (provider/model)
+        // Build model string for MLflow format (provider:/model)
         const provider = modelNode.data.provider || 'ollama';
         const modelName = modelNode.data.model;
-        const mlflowModelString = `${provider}/${modelName}`;
+        const mlflowModelString = `${provider}:/${modelName}`;
 
         addLog('info', `Using connected model for optimization: ${mlflowModelString}`, gepaOptimizeNode.id);
 
