@@ -6,7 +6,17 @@ A visual flow-based IDE for prompt engineering, testing, and optimization with L
 
 ## Overview
 
-tokn is a cross-platform desktop application that provides a node-based interface for building, testing, and optimizing prompts across multiple AI model providers. Design complex LLM workflows visually, test prompts with different models, and automatically optimize them using evolutionary algorithms.
+tokn is a web application that provides a node-based interface for building, testing, and optimizing prompts across multiple AI model providers. Design complex LLM workflows visually, test prompts with different models, and automatically optimize them using evolutionary algorithms.
+
+## 🚀 Quick Start
+
+**New to tokn?** Check out the [Quick Start Guide](QUICKSTART.md) to get running in 3 minutes!
+
+```bash
+npm install
+npm run dev
+# Open http://localhost:3000 and add your API keys in Settings
+```
 
 ## Features
 
@@ -23,14 +33,16 @@ tokn is a cross-platform desktop application that provides a node-based interfac
 - **DSPy Node** - Optimize prompts using the DSPy framework with automatic few-shot learning
 
 ### Multi-Provider Support
-- **Ollama** - Run local models (default: localhost:11434)
-- **OpenAI** - Access GPT models via API
+- **OpenAI** - GPT-4, GPT-4o, GPT-3.5 models via API
+- **Claude (Anthropic)** - Claude 3.5 Sonnet, Claude 3 Opus, Haiku models
+- **Gemini (Google)** - Gemini 2.0 Flash, Gemini 1.5 Pro models
 - Provider-agnostic architecture for easy extensibility
 
 ### Tool Calling System
 - Define custom tools with JSON schemas
-- JavaScript-based tool implementation
-- Sandboxed execution in web workers
+- JavaScript-based tool implementation using browser APIs
+- Sandboxed execution in Web Workers (no Node.js modules)
+- 30-second timeout and 5MB output limits for security
 - Automatic tool registration with compatible models
 
 ### DSPy Integration
@@ -45,30 +57,46 @@ tokn is a cross-platform desktop application that provides a node-based interfac
 - Keyboard shortcuts (Ctrl+S, Ctrl+O, Ctrl+N)
 
 ### Security
-- Encrypted API key storage using Electron's safeStorage
-- Sandboxed tool execution
-- No credentials stored in plaintext
+- Encrypted API key storage using Web Crypto API (AES-GCM 256-bit)
+- Keys stored in browser IndexedDB, never in plaintext
+- Sandboxed tool execution in Web Workers
+- Optional backend for DSPy/GEPA (API keys transmitted over HTTPS only)
 
 ## File Structure
 
 ```
 tokn/
-├── main/                    # Electron main process
-│   ├── index.js             # Window creation, IPC handlers
-│   ├── preload.js           # Security preload script
-│   └── secureStorage.js     # Encrypted credential storage
-├── renderer/                # UI and application logic
-│   ├── index.html           # Main UI structure
-│   ├── main.css             # Application styles
+├── src/                     # React application source
+│   ├── main.jsx             # React entry point
+│   ├── App.jsx              # Main React component
+│   ├── services/            # Core services
+│   │   ├── webStorage.js    # Encrypted API key storage (Web Crypto + IndexedDB)
+│   │   └── fileOperations.js # File System Access API wrapper
+│   └── workers/             # Web Workers
+│       └── toolWorker.js    # Sandboxed tool execution
+├── renderer/                # Original application logic (transitioning)
 │   ├── script.js            # Core app logic and state
-│   ├── model-adapters.js    # Provider-specific adapters
-│   ├── dspy-script.js       # DSPy optimization logic
+│   ├── main.css             # Application styles
+│   ├── model-adapters.js    # Provider-specific adapters (OpenAI, Claude, Gemini)
+│   ├── dspy-worker.js       # DSPy backend API client
+│   ├── gepa-worker.js       # GEPA backend API client
 │   ├── tool-script.js       # Tool node implementation
-│   └── tool-worker.js       # Sandboxed tool execution
+│   └── tool-worker-launcher.js # Web Worker launcher
+├── backend/                 # Python Flask API (optional)
+│   ├── app.py               # Flask server
+│   ├── routes/              # API endpoints
+│   │   ├── dspy_route.py    # DSPy optimization endpoint
+│   │   └── gepa_route.py    # GEPA optimization endpoint
+│   ├── dspy/                # DSPy Python scripts
+│   └── gepa/                # GEPA Python scripts
 ├── services/                # Business logic
-│   ├── modelService.js      # Model API interactions
 │   ├── providerRegistry.js  # Provider management
 │   └── config.js            # Configuration
+├── docs/                    # Documentation
+│   ├── BACKEND_API.md       # Backend API documentation
+│   └── DEPLOYMENT.md        # Deployment guide
+├── index.html               # Vite entry point
+├── vite.config.js           # Vite configuration
 └── package.json             # Dependencies and metadata
 ```
 

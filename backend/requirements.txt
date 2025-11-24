@@ -1,0 +1,17 @@
+# Flask web framework
+Flask==3.0.0
+flask-cors==4.0.0
+
+# DSPy dependencies
+dspy-ai
+
+# GEPA/MLflow dependencies
+mlflow>=3.5.0
+
+# LLM provider SDKs
+openai
+anthropic
+google-generativeai
+
+# Utilities
+python-dotenv==1.0.0

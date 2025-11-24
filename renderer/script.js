@@ -3,7 +3,16 @@
  * Complete implementation with nodes, wiring, inspector, logs, and run engine
  */
 
-const { listModels } = require('../services/modelService');
+// Import file operations service (will be bundled by Vite)
+let fileOperations = null;
+if (typeof window !== 'undefined') {
+    import('../src/services/fileOperations.js').then(module => {
+        fileOperations = module.default;
+    }).catch(err => {
+        console.error('Failed to load fileOperations:', err);
+    });
+}
+
 const {
     createToolNodeData,
     renderToolNode,
@@ -2509,8 +2518,6 @@ async function removeGeminiSettings() {
 // WORKFLOW PERSISTENCE
 // ============================================================================
 
-const { ipcRenderer } = require('electron');
-
 /**
  * Mark workflow as dirty (unsaved changes)
  */
@@ -2533,8 +2540,8 @@ function markWorkflowClean() {
 function updateWindowTitle() {
     let title = 'tokn';
     if (state.currentFilePath) {
-        const path = require('path');
-        const fileName = path.basename(state.currentFilePath).slice(0, -11);
+        // Extract filename from path (works for both file paths and simple names)
+        const fileName = state.currentFilePath.replace(/\.promptflow$/, '');
         title = `${fileName}${state.isDirty ? ' *' : ''} - tokn`;
     } else if (state.isDirty) {
         title = 'Untitled * - tokn';
@@ -2630,30 +2637,31 @@ function deserializeWorkflow(data) {
  */
 async function saveWorkflow() {
     try {
-        // If no current file path, use Save As
-        if (!state.currentFilePath) {
-            return await saveWorkflowAs();
+        if (!fileOperations) {
+            throw new Error('File operations not initialized');
         }
 
         // Serialize workflow
         const data = serializeWorkflow();
-        const jsonContent = JSON.stringify(data, null, 2);
 
-        // Write to file
-        const result = await ipcRenderer.invoke('file:write', state.currentFilePath, jsonContent);
+        // Use File System Access API
+        const result = await fileOperations.saveWorkflow(data, false);
 
         if (result.success) {
+            state.currentFilePath = result.filePath;
             state.lastManualSave = Date.now();
             markWorkflowClean();
 
             // Delete autosave file since we've saved manually
-            const autosavePath = await ipcRenderer.invoke('file:get-autosave-path');
-            await ipcRenderer.invoke('file:delete', autosavePath);
+            await fileOperations.deleteAutosave();
 
-            addLog('info', `Workflow saved to ${state.currentFilePath}`);
+            addLog('info', `Workflow saved to ${result.filePath}`);
             return true;
         } else {
-            throw new Error(result.error || 'Failed to write file');
+            if (result.error !== 'Save cancelled') {
+                throw new Error(result.error || 'Failed to save file');
+            }
+            return false;
         }
     } catch (error) {
         addLog('error', `Failed to save workflow: ${error.message}`);
@@ -2667,18 +2675,29 @@ async function saveWorkflow() {
  */
 async function saveWorkflowAs() {
     try {
-        // Show save dialog
-        const result = await ipcRenderer.invoke('dialog:save-file', state.currentFilePath);
-
-        if (!result.success) {
-            return false; // User canceled
+        if (!fileOperations) {
+            throw new Error('File operations not initialized');
         }
 
-        // Update current file path
-        state.currentFilePath = result.filePath;
+        // Serialize workflow
+        const data = serializeWorkflow();
 
-        // Save to the new path
-        return await saveWorkflow();
+        // Force "Save As" dialog
+        const result = await fileOperations.saveWorkflow(data, true);
+
+        if (result.success) {
+            state.currentFilePath = result.filePath;
+            state.lastManualSave = Date.now();
+            markWorkflowClean();
+
+            // Delete autosave file since we've saved manually
+            await fileOperations.deleteAutosave();
+
+            addLog('info', `Workflow saved to ${result.filePath}`);
+            return true;
+        } else {
+            return false; // User canceled
+        }
     } catch (error) {
         addLog('error', `Failed to save workflow: ${error.message}`);
         alert(`Failed to save workflow: ${error.message}`);
@@ -2691,6 +2710,10 @@ async function saveWorkflowAs() {
  */
 async function openWorkflow() {
     try {
+        if (!fileOperations) {
+            throw new Error('File operations not initialized');
+        }
+
         // Check for unsaved changes
         if (state.isDirty) {
             const response = confirm('You have unsaved changes. Do you want to discard them and open a new workflow?');
@@ -2699,25 +2722,18 @@ async function openWorkflow() {
             }
         }
 
-        // Show open dialog
-        const result = await ipcRenderer.invoke('dialog:open-file');
+        // Use File System Access API to open file
+        const result = await fileOperations.openWorkflow();
 
         if (!result.success) {
+            if (result.error !== 'Open cancelled') {
+                throw new Error(result.error || 'Failed to open file');
+            }
             return false; // User canceled
         }
 
-        // Read file
-        const fileResult = await ipcRenderer.invoke('file:read', result.filePath);
-
-        if (!fileResult.success) {
-            throw new Error(fileResult.error || 'Failed to read file');
-        }
-
-        // Parse JSON
-        const data = JSON.parse(fileResult.content);
-
         // Deserialize and load
-        deserializeWorkflow(data);
+        deserializeWorkflow(result.data);
 
         // Update state
         state.currentFilePath = result.filePath;
@@ -2725,8 +2741,7 @@ async function openWorkflow() {
         markWorkflowClean();
 
         // Delete autosave file since we've opened a saved workflow
-        const autosavePath = await ipcRenderer.invoke('file:get-autosave-path');
-        await ipcRenderer.invoke('file:delete', autosavePath);
+        await fileOperations.deleteAutosave();
 
         addLog('info', `Workflow loaded from ${result.filePath}`);
         return true;
@@ -2805,7 +2820,7 @@ async function newWorkflow() {
 }
 
 /**
- * Auto-save workflow to temp location
+ * Auto-save workflow to IndexedDB
  */
 async function autoSaveWorkflow() {
     // Only auto-save if there are changes and nodes exist
@@ -2814,19 +2829,17 @@ async function autoSaveWorkflow() {
     }
 
     try {
-        // Get autosave path
-        const autosavePath = await ipcRenderer.invoke('file:get-autosave-path');
+        if (!fileOperations) {
+            return;
+        }
 
         // Serialize workflow
         const data = serializeWorkflow();
-        const jsonContent = JSON.stringify(data, null, 2);
 
-        // Write to autosave file
-        const result = await ipcRenderer.invoke('file:write', autosavePath, jsonContent);
+        // Save to IndexedDB
+        await fileOperations.saveAutosave(data);
 
-        if (result.success) {
-            // Silent auto-save, don't log
-        }
+        // Silent auto-save, don't log
     } catch (error) {
         // Silent failure for auto-save
         console.error('Auto-save failed:', error);
@@ -2834,28 +2847,23 @@ async function autoSaveWorkflow() {
 }
 
 /**
- * Check for and offer to restore autosave
+ * Check for and offer to restore autosave from IndexedDB
  */
 async function checkAutoSaveRecovery() {
     try {
-        const autosavePath = await ipcRenderer.invoke('file:get-autosave-path');
-
-        // Check if autosave file exists
-        const exists = await ipcRenderer.invoke('file:exists', autosavePath);
-
-        if (!exists) {
+        if (!fileOperations) {
             return;
         }
 
-        // Get autosave file stats
-        const stats = await ipcRenderer.invoke('file:get-stats', autosavePath);
+        // Check if autosave exists in IndexedDB
+        const autosaveInfo = await fileOperations.getAutosaveInfo();
 
-        if (!stats.success) {
+        if (!autosaveInfo.exists) {
             return;
         }
 
         // Check if autosave is newer than last manual save (or if no manual save)
-        if (state.lastManualSave && stats.mtime <= state.lastManualSave) {
+        if (state.lastManualSave && autosaveInfo.timestamp <= state.lastManualSave) {
             return;
         }
 
@@ -2863,21 +2871,20 @@ async function checkAutoSaveRecovery() {
         const response = confirm('An auto-saved workflow was found. Do you want to restore it?');
 
         if (!response) {
-            // User declined, delete the autosave file
-            await ipcRenderer.invoke('file:delete', autosavePath);
+            // User declined, delete the autosave
+            await fileOperations.deleteAutosave();
             return;
         }
 
-        // Read autosave file
-        const fileResult = await ipcRenderer.invoke('file:read', autosavePath);
+        // Load autosave
+        const autosaveData = await fileOperations.loadAutosave();
 
-        if (!fileResult.success) {
-            throw new Error('Failed to read autosave file');
+        if (!autosaveData || !autosaveData.data) {
+            throw new Error('Failed to load autosave');
         }
 
-        // Parse and load
-        const data = JSON.parse(fileResult.content);
-        deserializeWorkflow(data);
+        // Deserialize and load
+        deserializeWorkflow(autosaveData.data);
 
         // Mark as dirty since it's from autosave
         markWorkflowDirty();

@@ -1,13 +1,11 @@
 /**
- * Tool Worker Launcher
- * Manages worker process lifecycle and IPC
+ * Tool Worker Launcher - Web Worker Version
+ * Manages Web Worker lifecycle for tool execution
+ * Replaces Node.js child_process with browser Web Workers
  */
 
-const { spawn } = require('child_process');
-const path = require('path');
-
 /**
- * Execute a tool in a separate process
+ * Execute a tool in a Web Worker
  *
  * @param {Object} options
  * @param {string} options.code - Tool implementation code
@@ -18,142 +16,146 @@ const path = require('path');
  */
 async function executeToolInWorker({ code, args, addLog, signal }) {
     const timeoutMs = 30000; // 30 seconds
-    const memoryCapMB = 512;
-    const maxOutputBytes = 5_000_000;
+    const maxOutputBytes = 5_000_000; // 5MB
 
     return new Promise((resolve, reject) => {
-        // Spawn worker process
-        const workerPath = path.join(__dirname, 'tool-worker.js');
-        const worker = spawn('node', [
-            `--max-old-space-size=${memoryCapMB}`,
-            workerPath
-        ], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        let stdout = '';
-        let stderr = '';
+        let worker = null;
         let timeoutHandle = null;
         let isKilled = false;
 
-        // Set up timeout
-        timeoutHandle = setTimeout(() => {
-            if (!isKilled) {
-                isKilled = true;
-                killWorkerProcess(worker);
-                addLog('error', 'Tool execution timeout (30s limit)');
-                reject(new Error('Tool execution timeout'));
-            }
-        }, timeoutMs);
-
-        // Handle abort signal
-        if (signal) {
-            signal.addEventListener('abort', () => {
-                if (!isKilled) {
-                    isKilled = true;
-                    killWorkerProcess(worker);
-                    addLog('warn', 'Tool execution canceled');
-                    reject(new Error('Tool execution canceled'));
-                }
+        try {
+            // Create Web Worker
+            // Note: In Vite, worker path should be relative to public or use ?worker import
+            worker = new Worker(new URL('../src/workers/toolWorker.js', import.meta.url), {
+                type: 'module'
             });
-        }
 
-        // Collect stdout
-        worker.stdout.on('data', (chunk) => {
-            stdout += chunk.toString();
-
-            // Check output size limit
-            if (stdout.length > maxOutputBytes) {
-                if (!isKilled) {
+            // Set up timeout
+            timeoutHandle = setTimeout(() => {
+                if (!isKilled && worker) {
                     isKilled = true;
-                    killWorkerProcess(worker);
-                    addLog('error', 'Tool output exceeded 5MB limit');
-                    reject(new Error('Tool output too large'));
+                    worker.terminate();
+                    addLog('error', 'Tool execution timeout (30s limit)');
+                    reject(new Error('Tool execution timeout'));
                 }
-            }
-        });
+            }, timeoutMs);
 
-        // Collect stderr
-        worker.stderr.on('data', (chunk) => {
-            stderr += chunk.toString();
-        });
-
-        // Handle process exit
-        worker.on('close', (code) => {
-            clearTimeout(timeoutHandle);
-
-            if (isKilled) {
-                return; // Already handled
+            // Handle abort signal
+            if (signal) {
+                signal.addEventListener('abort', () => {
+                    if (!isKilled && worker) {
+                        isKilled = true;
+                        worker.terminate();
+                        addLog('warn', 'Tool execution canceled');
+                        reject(new Error('Tool execution canceled'));
+                    }
+                });
             }
 
-            try {
-                const result = JSON.parse(stdout);
+            // Handle worker messages
+            worker.onmessage = (event) => {
+                clearTimeout(timeoutHandle);
 
-                // Check if result needs truncation
-                if (result.ok && result.result) {
-                    const resultStr = typeof result.result === 'string'
-                        ? result.result
-                        : JSON.stringify(result.result);
+                if (isKilled) {
+                    return; // Already handled
+                }
+
+                const response = event.data;
+
+                if (response.success) {
+                    // Check output size
+                    const resultStr = typeof response.result === 'string'
+                        ? response.result
+                        : JSON.stringify(response.result);
 
                     if (resultStr.length > maxOutputBytes) {
                         addLog('warn', 'Tool output truncated to 5MB');
 
-                        if (typeof result.result === 'string') {
-                            result.result = result.result.substring(0, maxOutputBytes);
+                        if (typeof response.result === 'string') {
+                            response.result = response.result.substring(0, maxOutputBytes);
                         }
                     }
+
+                    // Return normalized result
+                    resolve({
+                        ok: true,
+                        result: response.result,
+                        kind: detectResultKind(response.result)
+                    });
+                } else {
+                    // Error result
+                    resolve({
+                        ok: false,
+                        error: {
+                            code: 'TOOL_ERROR',
+                            message: response.error || 'Tool execution failed'
+                        }
+                    });
                 }
 
-                resolve(result);
-            } catch (error) {
-                // Failed to parse result
-                const errorResult = {
-                    ok: false,
-                    error: {
-                        code: 'PARSE_ERROR',
-                        message: `Failed to parse worker output: ${error.message}`
-                    }
-                };
-                resolve(errorResult);
-            }
-        });
+                // Clean up worker
+                if (worker) {
+                    worker.terminate();
+                    worker = null;
+                }
+            };
 
-        worker.on('error', (error) => {
+            // Handle worker errors
+            worker.onerror = (error) => {
+                clearTimeout(timeoutHandle);
+
+                if (!isKilled) {
+                    const errorResult = {
+                        ok: false,
+                        error: {
+                            code: 'WORKER_ERROR',
+                            message: error.message || 'Worker execution failed'
+                        }
+                    };
+                    resolve(errorResult);
+                }
+
+                if (worker) {
+                    worker.terminate();
+                    worker = null;
+                }
+            };
+
+            // Send tool code and arguments to worker
+            worker.postMessage({
+                toolCode: code,
+                toolArgs: args,
+                timeout: timeoutMs
+            });
+
+        } catch (error) {
             clearTimeout(timeoutHandle);
-            if (!isKilled) {
-                const errorResult = {
-                    ok: false,
-                    error: {
-                        code: 'WORKER_ERROR',
-                        message: error.message
-                    }
-                };
-                resolve(errorResult);
-            }
-        });
 
-        // Send input to worker
-        const input = JSON.stringify({ code, args });
-        worker.stdin.write(input);
-        worker.stdin.end();
+            if (worker) {
+                worker.terminate();
+            }
+
+            resolve({
+                ok: false,
+                error: {
+                    code: 'LAUNCH_ERROR',
+                    message: `Failed to launch worker: ${error.message}`
+                }
+            });
+        }
     });
 }
 
 /**
- * Kill worker process and its children
+ * Detect result kind (text, json, bytes)
  */
-function killWorkerProcess(worker) {
-    try {
-        // Try to kill process group on Unix-like systems
-        if (process.platform !== 'win32') {
-            process.kill(-worker.pid);
-        } else {
-            // On Windows, use taskkill to kill process tree
-            spawn('taskkill', ['/pid', worker.pid, '/T', '/F']);
-        }
-    } catch (error) {
-        // Fallback to simple kill
-        worker.kill('SIGKILL');
+function detectResultKind(result) {
+    if (typeof result === 'string') {
+        return 'text';
+    } else if (result instanceof ArrayBuffer || result instanceof Uint8Array) {
+        return 'bytes';
+    } else {
+        return 'json';
     }
 }
 

@@ -1,286 +1,194 @@
 /**
- * DSPy Python Bridge Worker
- * Manages Python subprocess for DSPy optimization
- * Handles bidirectional communication between Node.js and Python
+ * DSPy Backend API Bridge
+ * Makes API calls to backend server for DSPy optimization
+ * Replaces Python subprocess with HTTP API calls
  */
 
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+// Backend API configuration
+let backendApiUrl = window.location.origin + '/api';
 
 /**
- * Execute DSPy optimization in Python subprocess
+ * Configure backend API URL
+ * @param {string} url - Backend API base URL
+ */
+function configureBackendUrl(url) {
+    backendApiUrl = url;
+}
+
+/**
+ * Execute DSPy optimization via backend API
  * @param {Object} config - Configuration object for DSPy optimization
  * @param {Function} onProgress - Callback for progress updates (message, data)
  * @param {AbortSignal} signal - Optional abort signal for cancellation
  * @returns {Promise<Object>} - Optimization results
  */
 async function executeDSPyOptimization(config, onProgress, signal = null) {
-    return new Promise((resolve, reject) => {
-        // Path to Python script
-        const scriptPath = path.join(__dirname, 'dspy', 'dspy_optimizer.py');
-
-        // Verify Python script exists
-        if (!fs.existsSync(scriptPath)) {
-            reject(new Error(`DSPy optimizer script not found at: ${scriptPath}`));
-            return;
+    try {
+        // Validate config
+        const validation = validateDSPyConfig(config);
+        if (!validation.valid) {
+            throw new Error(`Invalid configuration: ${validation.errors.join(', ')}`);
         }
 
-        // Determine Python command
-        // Use Python 3.11 on Windows where DSPy is installed, otherwise try python3
-        const pythonCmd = process.platform === 'win32'
-            ? 'C:\\Users\\ojasj\\AppData\\Local\\Programs\\Python\\Python311\\python.exe'
-            : 'python3';
+        // Transform config to API format
+        const apiRequest = {
+            prompt: config.train_dataset[0]?.input || 'Answer the question.',
+            examples: config.train_dataset.map(ex => ({
+                input: ex.input,
+                expected_output: ex.output
+            })),
+            model: config.model_config.model,
+            provider: config.model_config.provider,
+            apiKey: config.model_config.api_key,
+            apiBase: config.model_config.api_base,
+            config: {
+                metric: config.metric_config.type,
+                maxBootstrappedDemos: config.optimizer_config.max_bootstrapped_demos,
+                maxLabeledDemos: config.optimizer_config.max_labeled_demos,
+                temperature: config.optimizer_config.temperature,
+                teacherSettings: config.optimizer_config.teacher_settings
+            }
+        };
 
-        // Spawn Python process
-        let pythonProcess;
-        try {
-            pythonProcess = spawn(pythonCmd, [scriptPath], {
-                stdio: ['pipe', 'pipe', 'pipe'],
-                env: { ...process.env }
-            });
-        } catch (spawnError) {
-            reject(new Error(`Failed to spawn Python process: ${spawnError.message}`));
-            return;
+        // Notify start
+        if (onProgress) {
+            onProgress('Connecting to backend API...', null);
         }
 
-        let outputBuffer = '';
-        let errorBuffer = '';
-        let hasResolved = false;
+        // Make API request
+        const controller = new AbortController();
 
-        // Handle abort signal
+        // Link abort signal if provided
         if (signal) {
             signal.addEventListener('abort', () => {
-                if (!hasResolved && pythonProcess && !pythonProcess.killed) {
-                    pythonProcess.kill('SIGTERM');
-                    hasResolved = true;
-                    reject(new Error('DSPy optimization cancelled by user'));
-                }
+                controller.abort();
             });
         }
 
-        // Send configuration to Python via stdin
-        try {
-            const configJson = JSON.stringify(config);
-            pythonProcess.stdin.write(configJson);
-            pythonProcess.stdin.end();
-        } catch (writeError) {
-            pythonProcess.kill();
-            reject(new Error(`Failed to send config to Python: ${writeError.message}`));
-            return;
+        const response = await fetch(`${backendApiUrl}/optimize/dspy`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(apiRequest),
+            signal: controller.signal
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || `API request failed: ${response.status}`);
         }
 
-        // Handle stdout (progress and results)
-        pythonProcess.stdout.on('data', (data) => {
-            const text = data.toString();
-            outputBuffer += text;
+        // Parse response
+        const result = await response.json();
 
-            // Process complete JSON messages (line by line)
-            const lines = text.split('\n');
+        if (!result.success) {
+            throw new Error(result.error || 'Optimization failed');
+        }
 
-            for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed) continue;
+        // Report progress logs if available
+        if (result.logs && Array.isArray(result.logs) && onProgress) {
+            result.logs.forEach(log => {
+                onProgress(log, null);
+            });
+        }
 
-                try {
-                    const message = JSON.parse(trimmed);
+        // Notify completion
+        if (onProgress) {
+            onProgress('Optimization complete!', null);
+        }
 
-                    if (message.type === 'progress') {
-                        // Progress update from Python
-                        if (onProgress && typeof onProgress === 'function') {
-                            onProgress(message.message, message.data || null);
-                        }
-                    } else if (message.type === 'success') {
-                        // Optimization completed successfully
-                        if (!hasResolved) {
-                            hasResolved = true;
-                            resolve(message);
-                        }
-                    } else if (message.type === 'error') {
-                        // Error from Python
-                        if (!hasResolved) {
-                            hasResolved = true;
-                            reject(new Error(message.message + (message.traceback ? '\n' + message.traceback : '')));
-                        }
-                    }
-                } catch (parseError) {
-                    // Not JSON, might be raw output or partial message
-                    // Silently continue, don't spam errors
-                }
-            }
-        });
+        // Return result in expected format
+        return {
+            type: 'success',
+            optimized_prompt: result.optimizedPrompt,
+            metrics: result.metrics || {},
+            message: 'DSPy optimization completed successfully'
+        };
 
-        // Handle stderr
-        pythonProcess.stderr.on('data', (data) => {
-            errorBuffer += data.toString();
-            // Optionally log stderr for debugging
-            // console.error('[DSPy Python stderr]:', data.toString());
-        });
+    } catch (error) {
+        // Handle abort
+        if (error.name === 'AbortError') {
+            throw new Error('DSPy optimization cancelled by user');
+        }
 
-        // Handle process exit
-        pythonProcess.on('close', (code) => {
-            if (!hasResolved) {
-                if (code !== 0) {
-                    hasResolved = true;
+        // Handle network errors
+        if (error.message.includes('fetch')) {
+            throw new Error(
+                `Failed to connect to backend API at ${backendApiUrl}. ` +
+                `Make sure the backend server is running. ` +
+                `Original error: ${error.message}`
+            );
+        }
 
-                    // Try to parse error from output buffer first
-                    const lines = outputBuffer.split('\n');
-                    for (const line of lines) {
-                        try {
-                            const msg = JSON.parse(line.trim());
-                            if (msg.type === 'error') {
-                                reject(new Error(msg.message + (msg.traceback ? '\n' + msg.traceback : '')));
-                                return;
-                            }
-                        } catch {}
-                    }
-
-                    // Fallback to generic error
-                    reject(new Error(
-                        `Python process exited with code ${code}\n` +
-                        `stderr: ${errorBuffer}\n` +
-                        `stdout: ${outputBuffer}`
-                    ));
-                } else {
-                    // Process exited successfully but no success message received
-                    // This shouldn't happen in normal operation
-                    hasResolved = true;
-                    reject(new Error('Python process completed but no result received'));
-                }
-            }
-        });
-
-        // Handle process errors (e.g., Python not found)
-        pythonProcess.on('error', (error) => {
-            if (!hasResolved) {
-                hasResolved = true;
-                reject(new Error(
-                    `Failed to start Python process: ${error.message}\n` +
-                    `Make sure Python 3 is installed and accessible via '${pythonCmd}' command.`
-                ));
-            }
-        });
-    });
+        // Re-throw other errors
+        throw error;
+    }
 }
 
 /**
- * Check if Python is available and DSPy is installed
- * @returns {Promise<Object>} - Status object with python_available, dspy_installed, version info
+ * Check if backend API is available and DSPy is supported
+ * @returns {Promise<Object>} - Status object with availability info
  */
 async function checkDSPyEnvironment() {
-    return new Promise((resolve) => {
-        const pythonCmd = process.platform === 'win32'
-            ? 'C:\\Users\\ojasj\\AppData\\Local\\Programs\\Python\\Python311\\python.exe'
-            : 'python3';
-
-        // Check if Python is available
-        const pythonCheck = spawn(pythonCmd, ['--version'], { stdio: 'pipe' });
-
-        let pythonVersion = '';
-        let pythonAvailable = false;
-
-        pythonCheck.stdout.on('data', (data) => {
-            pythonVersion = data.toString().trim();
-            pythonAvailable = true;
-        });
-
-        pythonCheck.stderr.on('data', (data) => {
-            // Python --version sometimes outputs to stderr
-            pythonVersion = data.toString().trim();
-            pythonAvailable = true;
-        });
-
-        pythonCheck.on('close', (code) => {
-            if (!pythonAvailable || code !== 0) {
-                resolve({
-                    python_available: false,
-                    dspy_installed: false,
-                    python_version: null,
-                    dspy_version: null,
-                    error: 'Python not found. Please install Python 3.8 or higher.'
-                });
-                return;
+    try {
+        const response = await fetch(`${backendApiUrl}/health`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
             }
-
-            // Check if DSPy is installed
-            const dspyCheck = spawn(pythonCmd, ['-c', 'import dspy; print(dspy.__version__)'], { stdio: 'pipe' });
-
-            let dspyVersion = '';
-            let dspyInstalled = false;
-
-            dspyCheck.stdout.on('data', (data) => {
-                dspyVersion = data.toString().trim();
-                dspyInstalled = true;
-            });
-
-            dspyCheck.on('close', (code) => {
-                resolve({
-                    python_available: true,
-                    dspy_installed: dspyInstalled && code === 0,
-                    python_version: pythonVersion,
-                    dspy_version: dspyVersion || null,
-                    error: dspyInstalled ? null : 'DSPy not installed. Run: pip install dspy-ai'
-                });
-            });
         });
 
-        pythonCheck.on('error', () => {
-            resolve({
+        if (!response.ok) {
+            return {
                 python_available: false,
                 dspy_installed: false,
                 python_version: null,
                 dspy_version: null,
-                error: `Python command '${pythonCmd}' not found. Please install Python 3.8 or higher.`
-            });
-        });
-    });
+                backend_available: false,
+                error: `Backend API not available (HTTP ${response.status})`
+            };
+        }
+
+        const health = await response.json();
+
+        return {
+            python_available: true, // Backend has Python
+            dspy_installed: health.features?.dspy || false,
+            python_version: 'Backend Python',
+            dspy_version: health.version || 'Unknown',
+            backend_available: health.status === 'ok',
+            backend_url: backendApiUrl,
+            error: health.features?.dspy ? null : 'DSPy not available on backend'
+        };
+
+    } catch (error) {
+        return {
+            python_available: false,
+            dspy_installed: false,
+            python_version: null,
+            dspy_version: null,
+            backend_available: false,
+            backend_url: backendApiUrl,
+            error: `Cannot connect to backend API at ${backendApiUrl}. Error: ${error.message}`
+        };
+    }
 }
 
 /**
- * Install DSPy via pip (requires user confirmation)
+ * Install DSPy - Not applicable for web version
  * @param {Function} onProgress - Progress callback
  * @returns {Promise<Object>} - Installation result
  */
 async function installDSPy(onProgress) {
-    return new Promise((resolve, reject) => {
-        const pythonCmd = process.platform === 'win32'
-            ? 'C:\\Users\\ojasj\\AppData\\Local\\Programs\\Python\\Python311\\python.exe'
-            : 'python3';
+    onProgress('DSPy installation must be done on the backend server.');
+    onProgress('Please contact your system administrator or refer to the backend setup documentation.');
 
-        onProgress('Installing DSPy... This may take a few minutes.');
-
-        const installProcess = spawn(pythonCmd, ['-m', 'pip', 'install', 'dspy-ai'], {
-            stdio: 'pipe'
-        });
-
-        let output = '';
-
-        installProcess.stdout.on('data', (data) => {
-            const text = data.toString();
-            output += text;
-            // Report progress
-            if (text.includes('Collecting') || text.includes('Installing')) {
-                onProgress(text.trim());
-            }
-        });
-
-        installProcess.stderr.on('data', (data) => {
-            output += data.toString();
-        });
-
-        installProcess.on('close', (code) => {
-            if (code === 0) {
-                onProgress('DSPy installed successfully!');
-                resolve({ success: true, output });
-            } else {
-                reject(new Error(`DSPy installation failed with code ${code}\n${output}`));
-            }
-        });
-
-        installProcess.on('error', (error) => {
-            reject(new Error(`Failed to run pip: ${error.message}`));
-        });
-    });
+    return Promise.reject(new Error(
+        'DSPy installation is not available in web version. ' +
+        'Please install DSPy on the backend server. ' +
+        'See docs/BACKEND_API.md for instructions.'
+    ));
 }
 
 /**
@@ -300,6 +208,9 @@ function validateDSPyConfig(config) {
         }
         if (!config.model_config.model) {
             errors.push('model_config.model is required');
+        }
+        if (!config.model_config.api_key) {
+            errors.push('model_config.api_key is required');
         }
     }
 
@@ -350,5 +261,6 @@ module.exports = {
     executeDSPyOptimization,
     checkDSPyEnvironment,
     installDSPy,
-    validateDSPyConfig
+    validateDSPyConfig,
+    configureBackendUrl
 };

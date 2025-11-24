@@ -4,22 +4,35 @@
  */
 
 /**
- * Default file-reader implementation
+ * Default web-safe HTTP fetcher implementation
+ * Note: Tools run in sandboxed Web Workers with no Node.js access
  */
-const DEFAULT_TOOL_CODE = `// Reads UTF-8 text from a local file path
-const fs = require('fs');
+const DEFAULT_TOOL_CODE = `// Fetches content from a URL using the Fetch API
+// Web Worker environment - no require(), no fs, pure JavaScript only
 
-function readTextFile(args) {
+async function fetchUrl(args) {
     try {
-        const content = fs.readFileSync(args.path, 'utf-8');
-        return content; // Return string directly
+        const response = await fetch(args.url);
+
+        if (!response.ok) {
+            throw new Error(\`HTTP error! status: \${response.status}\`);
+        }
+
+        const contentType = response.headers.get('content-type');
+
+        // Return appropriate format based on content type
+        if (contentType && contentType.includes('application/json')) {
+            return await response.json();
+        } else {
+            return await response.text();
+        }
     } catch (error) {
-        throw new Error(\`Failed to read file: \${error.message}\`);
+        throw new Error(\`Failed to fetch: \${error.message}\`);
     }
 }
 
-// Execute the tool
-return readTextFile(args);
+// Execute the tool (async supported)
+return fetchUrl(args);
 `;
 
 /**
@@ -27,14 +40,14 @@ return readTextFile(args);
  */
 function createToolNodeData() {
     return {
-        name: 'read_text_file',
-        description: 'Reads and returns text content from a local file path',
+        name: 'fetch_url',
+        description: 'Fetches content from a URL using HTTP GET request',
         parametersSchema: {
             type: 'object',
             properties: {
-                path: { type: 'string' }
+                url: { type: 'string', description: 'The URL to fetch (http/https)' }
             },
-            required: ['path']
+            required: ['url']
         },
         implementation: {
             type: 'script',
