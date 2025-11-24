@@ -911,11 +911,23 @@ function updateInspector() {
             </div>
             <div class="inspector-section">
                 <label>Temperature</label>
-                <input type="number" id="inspectorTemperature" class="inspector-input" value="${node.data.temperature}" step="0.1" min="0" max="2">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="range" id="inspectorTemperature"
+                           min="0" max="2" step="0.1"
+                           value="${node.data.temperature}"
+                           style="flex: 1;">
+                    <span id="temperatureValue" style="min-width: 50px; text-align: right;">${node.data.temperature}</span>
+                </div>
             </div>
             <div class="inspector-section">
                 <label>Max Tokens</label>
-                <input type="number" id="inspectorMaxTokens" class="inspector-input" value="${node.data.maxTokens}" min="1">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="range" id="inspectorMaxTokens"
+                           min="1" max="4096" step="1"
+                           value="${node.data.maxTokens}"
+                           style="flex: 1;">
+                    <span id="maxTokensValue" style="min-width: 50px; text-align: right;">${node.data.maxTokens}</span>
+                </div>
             </div>
             <div class="inspector-section">
                 <label>Output</label>
@@ -969,14 +981,20 @@ function updateInspector() {
             markWorkflowDirty();
         });
 
-        document.getElementById('inspectorTemperature').addEventListener('input', (e) => {
+        const temperatureSlider = document.getElementById('inspectorTemperature');
+        const temperatureValue = document.getElementById('temperatureValue');
+        temperatureSlider.addEventListener('input', (e) => {
             node.data.temperature = parseFloat(e.target.value);
+            temperatureValue.textContent = e.target.value;
             updateNodeDisplay(node.id);
             markWorkflowDirty();
         });
 
-        document.getElementById('inspectorMaxTokens').addEventListener('input', (e) => {
+        const maxTokensSlider = document.getElementById('inspectorMaxTokens');
+        const maxTokensValue = document.getElementById('maxTokensValue');
+        maxTokensSlider.addEventListener('input', (e) => {
             node.data.maxTokens = parseInt(e.target.value);
+            maxTokensValue.textContent = e.target.value;
             updateNodeDisplay(node.id);
             markWorkflowDirty();
         });
