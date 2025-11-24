@@ -2316,7 +2316,7 @@ async function loadModels() {
             addLog('warn', 'No local models found');
         }
     } catch (err) {
-        addLog('error', `Failed to load models: ${err.message}`);
+        // addLog('error', `Failed to load models: ${err.message}`);
         state.availableModels = [];
     }
 }

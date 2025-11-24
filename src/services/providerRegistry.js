@@ -120,42 +120,92 @@ class ProviderRegistry {
             throw new Error(`No API key configured for ${providerId}`);
         }
 
+        let models = [];
+
         try {
-            const adapter = await this.getAdapter(providerId);
-            const models = await adapter.listModels();
+            if (providerId === 'openai') {
+                const response = await fetch('https://api.openai.com/v1/models', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`OpenAI list models failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Filter to only chat models and sort by most useful first
+                const chatModels = data.data
+                    .filter(m => m.id.includes('gpt'))
+                    .sort((a, b) => {
+                        // Prioritize newer models
+                        const priority = ['gpt-4', 'gpt-3.5-turbo', 'gpt-4o'];
+                        const aIdx = priority.findIndex(p => a.id.includes(p));
+                        const bIdx = priority.findIndex(p => b.id.includes(p));
+                        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+                        if (aIdx !== -1) return -1;
+                        if (bIdx !== -1) return 1;
+                        return a.id.localeCompare(b.id);
+                    });
+
+                models = chatModels.map(m => ({ id: m.id, name: m.id }));
+            } else if (providerId === 'claude') {
+                const response = await fetch('https://api.anthropic.com/v1/models', {
+                    method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Claude list models failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                models = Array.isArray(data?.data)
+                    ? data.data.map(m => ({
+                        id: m.id,
+                        name: m.display_name || m.id
+                    }))
+                    : [];
+            } else if (providerId === 'gemini') {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`, {
+                    method: 'GET'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Gemini list models failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Filter to only models that support generateContent
+                const generativeModels = Array.isArray(data?.models)
+                    ? data.models.filter(m =>
+                        m.supportedGenerationMethods?.includes('generateContent')
+                    )
+                    : [];
+
+                models = generativeModels.map(m => ({
+                    id: m.name.replace('models/', ''), // Remove 'models/' prefix
+                    name: m.displayName || m.name.replace('models/', '')
+                }));
+            } else {
+                throw new Error(`Unknown provider: ${providerId}`);
+            }
+
+            // Cache the results
             this.modelCache.set(providerId, models);
             return models;
         } catch (error) {
             console.error(`Failed to list models for ${providerId}:`, error);
-            // Return default models on error
-            return this.getDefaultModels(providerId);
+            throw error;
         }
-    }
-
-    /**
-     * Get default models for a provider (fallback)
-     */
-    getDefaultModels(providerId) {
-        const defaults = {
-            'openai': [
-                { id: 'gpt-4o', name: 'GPT-4o' },
-                { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-                { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-                { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' }
-            ],
-            'claude': [
-                { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' },
-                { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku' },
-                { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' }
-            ],
-            'gemini': [
-                { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash' },
-                { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
-                { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }
-            ]
-        };
-
-        return defaults[providerId] || [];
     }
 
     /**
@@ -177,13 +227,13 @@ class ProviderRegistry {
         let adapter;
         switch (providerId) {
             case 'openai':
-                adapter = new OpenAIAdapter(apiKey);
+                adapter = new OpenAIAdapter({ apiKey });
                 break;
             case 'claude':
-                adapter = new ClaudeAdapter(apiKey);
+                adapter = new ClaudeAdapter({ apiKey });
                 break;
             case 'gemini':
-                adapter = new GeminiAdapter(apiKey);
+                adapter = new GeminiAdapter({ apiKey });
                 break;
             default:
                 throw new Error(`Unknown provider: ${providerId}`);
