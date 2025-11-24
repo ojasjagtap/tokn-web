@@ -6,7 +6,7 @@ A visual flow-based IDE for prompt engineering, testing, and optimization with L
 
 ## Overview
 
-Prompt IDE is a cross-platform desktop application that provides a node-based interface for building, testing, and optimizing prompts across multiple AI model providers. Design complex LLM workflows visually, test prompts with different models, and automatically optimize them using evolutionary algorithms.
+tokn is a cross-platform desktop application that provides a node-based interface for building, testing, and optimizing prompts across multiple AI model providers. Design complex LLM workflows visually, test prompts with different models, and automatically optimize them using evolutionary algorithms.
 
 ## Features
 
