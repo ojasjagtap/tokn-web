@@ -1,6 +1,6 @@
 # GEPA Prompt Optimization
 
-This module implements MLflow GEPA (Genetic Evolutionary Prompt Algorithm) optimization for the Prompt IDE.
+This module implements MLflow GEPA (Genetic Evolutionary Prompt Algorithm) optimization for tokn.
 
 ## Installation
 

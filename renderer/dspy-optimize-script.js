@@ -550,7 +550,7 @@ async function executeDSPyOptimizeNode(
             program_type: dspyOptimizeNode.data.programType,
             train_dataset: dspyOptimizeNode.data.trainDataset,
             val_dataset: dspyOptimizeNode.data.valDataset,
-            save_path: path.join(os.tmpdir(), 'prompt-ide', 'dspy_compiled', dspyOptimizeNode.id)
+            save_path: path.join(os.tmpdir(), 'tokn', 'dspy_compiled', dspyOptimizeNode.id)
         };
 
         // Execute optimization with progress callback

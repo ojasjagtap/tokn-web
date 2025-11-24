@@ -1,5 +1,5 @@
 /**
- * Prompt IDE - Flow UI MVP
+ * tokn - Flow UI MVP
  * Complete implementation with nodes, wiring, inspector, logs, and run engine
  */
 
@@ -2536,13 +2536,13 @@ function markWorkflowClean() {
  * Update window title to show file name and dirty status
  */
 function updateWindowTitle() {
-    let title = 'Prompt IDE';
+    let title = 'tokn';
     if (state.currentFilePath) {
         const path = require('path');
         const fileName = path.basename(state.currentFilePath).slice(0, -11);
-        title = `${fileName}${state.isDirty ? ' *' : ''} - Prompt IDE`;
+        title = `${fileName}${state.isDirty ? ' *' : ''} - tokn`;
     } else if (state.isDirty) {
-        title = 'Untitled * - Prompt IDE';
+        title = 'Untitled * - tokn';
     }
     document.title = title;
 }

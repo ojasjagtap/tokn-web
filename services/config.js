@@ -7,7 +7,7 @@
 
 const config = {
     // App settings
-    appName: 'Prompt IDE',
+    appName: 'tokn',
     version: '1.0.0',
     
     // Window settings

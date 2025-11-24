@@ -52,7 +52,7 @@ tokn is a cross-platform desktop application that provides a node-based interfac
 ## File Structure
 
 ```
-prompt-ide/
+tokn/
 ├── main/                    # Electron main process
 │   ├── index.js             # Window creation, IPC handlers
 │   ├── preload.js           # Security preload script

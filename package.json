@@ -1,7 +1,7 @@
 {
-  "name": "prompt-goat-sandbox",
+  "name": "tokn",
   "version": "1.0.0",
-  "description": "sandbox for electron app",
+  "description": "Visual flow-based IDE for prompt engineering and LLM workflows",
   "main": "main/index.js",
   "scripts": {
     "test": "echo \"hi\" && exit 1",
@@ -9,16 +9,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AnanthSankaralingam/prompt-goat-sandbox.git"
+    "url": "git+https://github.com/ojasjagtap/tokn.git"
   },
-  "keywords": [],
+  "keywords": ["prompt-engineering", "llm", "ai", "workflow", "electron"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/AnanthSankaralingam/prompt-goat-sandbox/issues"
+    "url": "https://github.com/ojasjagtap/tokn/issues"
   },
-  "homepage": "https://github.com/AnanthSankaralingam/prompt-goat-sandbox#readme",
+  "homepage": "https://github.com/ojasjagtap/tokn#readme",
   "devDependencies": {
     "electron": "^38.2.0"
   }
