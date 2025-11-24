@@ -1,4 +1,4 @@
-# Prompt IDE
+# tokn
 
 A visual flow-based IDE for prompt engineering, testing, and optimization with Large Language Models.
 
