@@ -4,9 +4,11 @@
  * Uses actual DSPy library via Python bridge for prompt optimization
  */
 
-const { executeDSPyOptimization, checkDSPyEnvironment, validateDSPyConfig } = require('./dspy-worker');
-const path = require('path');
-const os = require('os');
+import { executeDSPyOptimization, checkDSPyEnvironment, validateDSPyConfig } from './dspy-worker.js';
+// Note: path and os modules are Node.js-specific and not available in browser
+// These are commented out for web version - backend functionality is disabled
+// const path = require('path');
+// const os = require('os');
 
 // ============================================================================
 // DATA STRUCTURE
@@ -550,7 +552,7 @@ async function executeDSPyOptimizeNode(
             program_type: dspyOptimizeNode.data.programType,
             train_dataset: dspyOptimizeNode.data.trainDataset,
             val_dataset: dspyOptimizeNode.data.valDataset,
-            save_path: path.join(os.tmpdir(), 'tokn', 'dspy_compiled', dspyOptimizeNode.id)
+            save_path: `/tmp/tokn/dspy_compiled/${dspyOptimizeNode.id}` // Fallback path for web version
         };
 
         // Execute optimization with progress callback
@@ -594,7 +596,7 @@ async function executeDSPyOptimizeNode(
     }
 }
 
-module.exports = {
+export {
     createDSPyOptimizeNodeData,
     renderDSPyOptimizeNode,
     renderDSPyOptimizeInspector,

@@ -159,6 +159,6 @@ function detectResultKind(result) {
     }
 }
 
-module.exports = {
+export {
     executeToolInWorker
 };

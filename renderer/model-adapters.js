@@ -647,7 +647,7 @@ class GeminiAdapter extends ModelAdapter {
     }
 }
 
-module.exports = {
+export {
     ModelAdapter,
     OpenAIAdapter,
     ClaudeAdapter,

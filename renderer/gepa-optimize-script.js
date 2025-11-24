@@ -4,9 +4,11 @@
  * Uses MLflow GEPA library via Python bridge for prompt optimization
  */
 
-const { executeGepaOptimization, checkGepaEnvironment, validateGepaConfig } = require('./gepa-worker');
-const path = require('path');
-const os = require('os');
+import { executeGepaOptimization, checkGepaEnvironment, validateGepaConfig } from './gepa-worker.js';
+// Note: path and os modules are Node.js-specific and not available in browser
+// These are commented out for web version - backend functionality is disabled
+// const path = require('path');
+// const os = require('os');
 
 // ============================================================================
 // DATA STRUCTURE
@@ -543,7 +545,7 @@ async function executeGepaOptimizeNode(
     }
 }
 
-module.exports = {
+export {
     createGepaOptimizeNodeData,
     renderGepaOptimizeNode,
     renderGepaOptimizeInspector,

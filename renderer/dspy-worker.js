@@ -257,7 +257,7 @@ function validateDSPyConfig(config) {
     };
 }
 
-module.exports = {
+export {
     executeDSPyOptimization,
     checkDSPyEnvironment,
     installDSPy,

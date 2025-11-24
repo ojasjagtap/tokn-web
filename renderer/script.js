@@ -3,17 +3,14 @@
  * Complete implementation with nodes, wiring, inspector, logs, and run engine
  */
 
-// Import file operations service (will be bundled by Vite)
-let fileOperations = null;
-if (typeof window !== 'undefined') {
-    import('../src/services/fileOperations.js').then(module => {
-        fileOperations = module.default;
-    }).catch(err => {
-        console.error('Failed to load fileOperations:', err);
-    });
-}
+console.log('[Script] Starting to load script.js...');
 
-const {
+// Import dependencies
+import fileOperations from '../src/services/fileOperations.js';
+import { providerRegistry } from '../src/services/providerRegistry.js';
+
+console.log('[Script] Imports loaded successfully');
+import {
     createToolNodeData,
     renderToolNode,
     renderToolInspector,
@@ -22,26 +19,26 @@ const {
     findConnectedModels,
     buildToolsCatalog,
     setGetAllToolNodes
-} = require('./tool-script');
-const {
+} from './tool-script.js';
+import {
     createDSPyOptimizeNodeData,
     renderDSPyOptimizeNode,
     renderDSPyOptimizeInspector,
     isValidDSPyOptimizeConnection,
     validateDSPyOptimizeNode,
     executeDSPyOptimizeNode
-} = require('./dspy-optimize-script');
-const { checkDSPyEnvironment } = require('./dspy-worker');
-const {
+} from './dspy-optimize-script.js';
+import { checkDSPyEnvironment } from './dspy-worker.js';
+import {
     createGepaOptimizeNodeData,
     renderGepaOptimizeNode,
     renderGepaOptimizeInspector,
     isValidGepaOptimizeConnection,
     validateGepaOptimizeNode,
     executeGepaOptimizeNode
-} = require('./gepa-optimize-script');
-const { checkGepaEnvironment } = require('./gepa-worker');
-const { executeToolInWorker } = require('./tool-worker-launcher');
+} from './gepa-optimize-script.js';
+import { checkGepaEnvironment } from './gepa-worker.js';
+import { executeToolInWorker } from './tool-worker-launcher.js';
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -2328,8 +2325,6 @@ async function loadModels() {
 // SETTINGS MODAL
 // ============================================================================
 
-const { providerRegistry } = require('../services/providerRegistry');
-
 async function openSettingsModal() {
     const modal = document.getElementById('settingsModal');
     modal.style.display = 'flex';
@@ -2918,8 +2913,22 @@ function stopAutoSave() {
 // INITIALIZATION
 // ============================================================================
 
-document.addEventListener('DOMContentLoaded', async function() {
-    // Load editor settings from localStorage
+// Initialize the app when script loads
+// Using IIFE instead of DOMContentLoaded since React loads script after DOM is ready
+(async function initializeApp() {
+    try {
+        console.log('[Script] Initializing app...');
+        console.log('[Script] Document ready state:', document.readyState);
+
+        // Wait for DOM to be ready if needed
+        if (document.readyState === 'loading') {
+            console.log('[Script] Waiting for DOMContentLoaded...');
+            await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+        }
+
+        console.log('[Script] DOM is ready, starting initialization...');
+
+        // Load editor settings from localStorage
     const savedSnapToGrid = localStorage.getItem('snapToGrid');
     if (savedSnapToGrid !== null) {
         state.snapToGrid = savedSnapToGrid === 'true';
@@ -3054,7 +3063,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Start auto-save interval
     startAutoSave();
-});
+
+    console.log('[Script] Initialization complete!');
+    } catch (error) {
+        console.error('[Script] Initialization error:', error);
+        console.error('[Script] Stack trace:', error.stack);
+    }
+})(); // Invoke the IIFE immediately
 
 // ============================================================================
 // INSPECTOR RESIZE

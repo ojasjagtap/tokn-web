@@ -15,8 +15,16 @@ body {
     color: #e0e0e0;
     overflow: hidden;
     height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+#root {
     display: flex;
     flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
 }
 
 body.dragging,

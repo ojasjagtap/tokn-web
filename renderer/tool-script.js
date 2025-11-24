@@ -410,7 +410,7 @@ function buildToolsCatalog(tools) {
     }));
 }
 
-module.exports = {
+export {
     createToolNodeData,
     renderToolNode,
     renderToolInspector,

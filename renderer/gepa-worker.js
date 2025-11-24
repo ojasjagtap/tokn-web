@@ -257,7 +257,7 @@ function validateGepaConfig(config) {
     };
 }
 
-module.exports = {
+export {
     executeGepaOptimization,
     checkGepaEnvironment,
     installGepa,
