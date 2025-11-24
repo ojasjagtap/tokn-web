@@ -49,14 +49,6 @@ tokn is a cross-platform desktop application that provides a node-based interfac
 - Sandboxed tool execution
 - No credentials stored in plaintext
 
-## Technology Stack
-
-- **Electron** - Cross-platform desktop framework
-- **Node.js** - JavaScript runtime
-- **Vanilla JavaScript** - No external UI frameworks
-- **HTML5 Canvas & SVG** - Visual rendering
-- **Web Workers** - Isolated tool execution
-
 ## File Structure
 
 ```
@@ -79,39 +71,6 @@ prompt-ide/
 │   └── config.js            # Configuration
 └── package.json             # Dependencies and metadata
 ```
-
-## Getting Started
-
-### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
-- Ollama (optional, for local models)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/ojasjagtap/prompt-ide.git
-cd prompt-ide
-
-# Install dependencies
-npm install
-
-# Run the application
-npm start
-```
-
-### Configuration
-
-1. **Ollama Setup** (optional)
-   - Install Ollama from [ollama.ai](https://ollama.ai)
-   - Ollama runs on localhost:11434 by default
-   - Pull models: `ollama pull llama2`
-
-2. **OpenAI Setup** (optional)
-   - Open Settings in the application
-   - Enter your OpenAI API key
-   - Keys are encrypted and stored locally
 
 ### Usage
 
