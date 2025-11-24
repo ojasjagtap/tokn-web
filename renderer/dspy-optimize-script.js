@@ -526,12 +526,30 @@ async function executeDSPyOptimizeNode(
     }
 
     try {
+        // Get API key from providerRegistry (not stored in node data for security)
+        const { providerRegistry } = await import('../src/services/providerRegistry.js');
+        const apiKey = await providerRegistry.getApiKey(modelNode.data.provider);
+
+        if (!apiKey) {
+            addLog('error', `No API key configured for provider: ${modelNode.data.provider}`, dspyOptimizeNode.id);
+            setNodeStatus(dspyOptimizeNode.id, 'error');
+            return;
+        }
+
+        // Map provider IDs to backend format
+        const providerMap = {
+            'openai': 'openai',
+            'claude': 'anthropic',
+            'gemini': 'google'
+        };
+        const backendProvider = providerMap[modelNode.data.provider] || modelNode.data.provider;
+
         // Build configuration for Python worker
         const config = {
             model_config: {
-                provider: modelNode.data.provider || 'ollama',
+                provider: backendProvider,
                 model: modelNode.data.model,
-                api_key: modelNode.data.apiKey || ''
+                api_key: apiKey
             },
             // Pass system prompt for DSPy to use as initial instruction
             initial_instruction: systemPrompt,

@@ -45,7 +45,7 @@ def setup_language_model(config: Dict[str, Any]):
 
     Args:
         config: {
-            'provider': 'ollama' | 'openai' | 'anthropic',
+            'provider': 'openai' | 'anthropic' | 'google',
             'model': 'model-name',
             'api_key': 'optional-api-key',
             'api_base': 'optional-base-url'
@@ -82,8 +82,18 @@ def setup_language_model(config: Dict[str, Any]):
             api_key=api_key
         )
 
+    elif provider == 'google':
+        # Google Gemini models
+        if not api_key:
+            api_key = os.environ.get('GOOGLE_API_KEY', '')
+
+        lm = dspy.LM(
+            model=f'google/{model_id}',
+            api_key=api_key
+        )
+
     else:
-        raise ValueError(f"Unsupported provider: {provider}. Use 'openai' or 'anthropic'.")
+        raise ValueError(f"Unsupported provider: {provider}. Use 'openai', 'anthropic', or 'google'.")
 
     # Configure DSPy to use this model
     dspy.configure(lm=lm)
