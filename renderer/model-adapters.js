@@ -42,130 +42,6 @@ class ModelAdapter {
 }
 
 /**
- * Ollama Adapter with native tool support
- */
-class OllamaAdapter extends ModelAdapter {
-    prepareRequest({ prompt, toolsCatalog, settings, sessionState }) {
-        // If tools are present, we MUST use chat format
-        const hasTools = toolsCatalog && toolsCatalog.length > 0;
-
-        if (hasTools) {
-            // Use chat format for tool calling
-            // Initialize messages if not present
-            if (!sessionState.messages || sessionState.messages.length === 0) {
-                sessionState.messages = [
-                    {
-                        role: 'system',
-                        content: 'You are a helpful assistant. You have access to tools that you can use when needed. However, if the user\'s question can be answered directly without using any tools, you should respond directly. Only use tools when they are necessary to complete the task.'
-                    },
-                    { role: 'user', content: prompt }
-                ];
-            }
-
-            const body = {
-                model: settings.model,
-                messages: sessionState.messages,
-                stream: true,
-                options: {
-                    temperature: settings.temperature,
-                    num_predict: settings.maxTokens
-                },
-                tools: toolsCatalog.map(tool => ({
-                    type: 'function',
-                    function: {
-                        name: tool.name,
-                        description: tool.description,
-                        parameters: tool.parametersSchema
-                    }
-                }))
-            };
-
-            return { body, useChat: true };
-        } else {
-            // Use generate format for non-tool requests
-            const body = {
-                model: settings.model,
-                prompt: prompt,
-                stream: true,
-                options: {
-                    temperature: settings.temperature,
-                    num_predict: settings.maxTokens
-                }
-            };
-
-            return { body, useChat: false };
-        }
-    }
-
-    parseChunk(chunk, chunkState) {
-        const result = { textDelta: null, toolCalls: null };
-
-        try {
-            const lines = chunk.split('\n').filter(l => l.trim());
-
-            for (const line of lines) {
-                const data = JSON.parse(line);
-
-                // Chat format (with message)
-                if (data.message) {
-                    // Text response
-                    if (data.message.content) {
-                        result.textDelta = data.message.content;
-                    }
-
-                    // Tool calls (Ollama chat format)
-                    if (data.message.tool_calls && Array.isArray(data.message.tool_calls)) {
-                        result.toolCalls = data.message.tool_calls.map(tc => ({
-                            name: tc.function?.name || tc.name,
-                            arguments: typeof tc.function?.arguments === 'string'
-                                ? JSON.parse(tc.function.arguments)
-                                : (tc.function?.arguments || tc.arguments || {})
-                        }));
-                    }
-                }
-                // Generate format (legacy, no tools)
-                else if (data.response) {
-                    result.textDelta = data.response;
-                }
-            }
-        } catch (error) {
-            // Ignore parse errors for partial chunks
-        }
-
-        return result;
-    }
-
-    continueWithToolResult(sessionState, toolResult) {
-        // Add tool result message (Ollama format)
-        // The assistant message with tool_calls should already be in sessionState.messages
-        sessionState.messages.push({
-            role: 'tool',
-            content: this.formatToolResultForModel(toolResult.normalized)
-        });
-
-        return sessionState;
-    }
-
-    formatToolResultForModel(normalized) {
-        if (!normalized.ok) {
-            return JSON.stringify({
-                error: normalized.error?.message || String(normalized.error)
-            });
-        }
-
-        if (normalized.kind === 'text') {
-            return normalized.result;
-        } else if (normalized.kind === 'json') {
-            return JSON.stringify(normalized.result);
-        } else if (normalized.kind === 'bytes') {
-            return `[Base64 Data: ${normalized.result.length} chars]`;
-        }
-
-        return String(normalized.result);
-    }
-}
-
-/**
  * Fallback Prompt Adapter
  * Uses prompt injection to simulate tool calling
  */
@@ -773,7 +649,6 @@ class GeminiAdapter extends ModelAdapter {
 
 module.exports = {
     ModelAdapter,
-    OllamaAdapter,
     OpenAIAdapter,
     ClaudeAdapter,
     GeminiAdapter,

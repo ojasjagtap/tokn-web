@@ -2,24 +2,29 @@
   "name": "tokn",
   "version": "1.0.0",
   "description": "Visual flow-based IDE for prompt engineering and LLM workflows",
-  "main": "main/index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"hi\" && exit 1",
-    "start": "electron ."
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ojasjagtap/tokn.git"
   },
-  "keywords": ["prompt-engineering", "llm", "ai", "workflow", "electron"],
+  "keywords": ["prompt-engineering", "llm", "ai", "workflow", "web-app"],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/ojasjagtap/tokn/issues"
   },
   "homepage": "https://github.com/ojasjagtap/tokn#readme",
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
   "devDependencies": {
-    "electron": "^38.2.0"
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.3"
   }
 }

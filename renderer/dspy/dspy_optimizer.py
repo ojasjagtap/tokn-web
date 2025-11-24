@@ -56,21 +56,12 @@ def setup_language_model(config: Dict[str, Any]):
     """
     import dspy
 
-    provider = config.get('provider', 'ollama')
-    model_id = config.get('model', 'llama3.2:1b')
+    provider = config.get('provider', 'openai')
+    model_id = config.get('model', 'gpt-4o-mini')
     api_key = config.get('api_key', '')
     api_base = config.get('api_base')
 
-    if provider == 'ollama':
-        # Ollama local models
-        base_url = api_base or 'http://localhost:11434'
-        lm = dspy.LM(
-            model=f'ollama_chat/{model_id}',
-            api_base=base_url,
-            api_key=''
-        )
-
-    elif provider == 'openai':
+    if provider == 'openai':
         # OpenAI models
         if not api_key:
             # Try environment variable
@@ -92,7 +83,7 @@ def setup_language_model(config: Dict[str, Any]):
         )
 
     else:
-        raise ValueError(f"Unsupported provider: {provider}. Use 'ollama', 'openai', or 'anthropic'.")
+        raise ValueError(f"Unsupported provider: {provider}. Use 'openai' or 'anthropic'.")
 
     # Configure DSPy to use this model
     dspy.configure(lm=lm)

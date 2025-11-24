@@ -337,7 +337,7 @@ function createNode(type, worldX, worldY) {
     } else if (type === 'model') {
         node.data = {
             title: 'Model',
-            provider: 'ollama', // default to ollama
+            provider: 'openai', // default to openai
             model: state.availableModels[0] || '',
             temperature: 0.7,
             maxTokens: 512,
@@ -863,7 +863,7 @@ function updateInspector() {
     } else if (node.type === 'model') {
         // Ensure node has provider field (for backward compatibility)
         if (!node.data.provider) {
-            node.data.provider = 'ollama';
+            node.data.provider = 'openai';
         }
 
         // Get available providers (show all - API key check happens at runtime)
@@ -1672,7 +1672,7 @@ async function runFlow() {
                 },
                 state.runAbortController.signal,
                 toolsCatalog.length > 0 ? toolsCatalog : null,
-                modelNode.data.provider || 'ollama'
+                modelNode.data.provider || 'openai'
             );
 
             const duration = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -1942,7 +1942,7 @@ async function runModelNode(nodeId) {
             },
             state.modelRunAbortController.signal,
             toolsCatalog.length > 0 ? toolsCatalog : null,
-            modelNode.data.provider || 'ollama'
+            modelNode.data.provider || 'openai'
         );
 
         const duration = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -2009,7 +2009,7 @@ function updateModelButtons() {
     }
 }
 
-async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk, signal, toolsCatalog = null, provider = 'ollama') {
+async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk, signal, toolsCatalog = null, provider = 'openai') {
     // Get adapter from provider registry
     const adapter = await providerRegistry.getAdapter(provider);
 
@@ -2040,12 +2040,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
         // Build request based on provider
         let url, headers;
 
-        if (provider === 'ollama') {
-            url = preparedRequest.useChat
-                ? 'http://localhost:11434/api/chat'
-                : 'http://localhost:11434/api/generate';
-            headers = { 'Content-Type': 'application/json' };
-        } else if (provider === 'openai') {
+        if (provider === 'openai') {
             url = 'https://api.openai.com/v1/chat/completions';
             const apiKey = await providerRegistry.getApiKey('openai');
 

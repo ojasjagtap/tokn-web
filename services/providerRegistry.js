@@ -1,9 +1,18 @@
 /**
  * Provider Registry
- * Central registry for managing model providers (Ollama, OpenAI, etc.)
+ * Central registry for managing model providers (OpenAI, Claude, Gemini)
  */
 
-const { OllamaAdapter } = require('../renderer/model-adapters');
+// Import webStorage for API key management (will be bundled by Vite)
+let webStorage = null;
+if (typeof window !== 'undefined') {
+    // Dynamic import for browser environment
+    import('../src/services/webStorage.js').then(module => {
+        webStorage = module.default;
+    }).catch(err => {
+        console.error('Failed to load webStorage:', err);
+    });
+}
 
 class ProviderRegistry {
     constructor() {
@@ -12,12 +21,6 @@ class ProviderRegistry {
         this.adapters = new Map(); // providerId -> adapter instance
 
         // Register built-in providers
-        this.registerProvider({
-            id: 'ollama',
-            name: 'Ollama',
-            requiresApiKey: false
-        });
-
         this.registerProvider({
             id: 'openai',
             name: 'OpenAI',
@@ -73,25 +76,15 @@ class ProviderRegistry {
     }
 
     /**
-     * Set API key for a provider (async - uses secure storage)
+     * Set API key for a provider (async - uses secure web storage)
      */
     async setApiKey(providerId, apiKey) {
         try {
-            // Use secure storage if available, fallback to localStorage
-            if (typeof window !== 'undefined' && window.secureStorage) {
-                if (apiKey) {
-                    await window.secureStorage.setApiKey(providerId, apiKey);
-                } else {
-                    await window.secureStorage.removeApiKey(providerId);
-                }
-            } else if (typeof localStorage !== 'undefined') {
-                // Fallback to localStorage (less secure)
-                const storageKey = `provider_${providerId}_apikey`;
-                if (apiKey) {
-                    localStorage.setItem(storageKey, apiKey);
-                } else {
-                    localStorage.removeItem(storageKey);
-                }
+            // Use webStorage (IndexedDB + Web Crypto)
+            if (webStorage) {
+                await webStorage.setApiKey(providerId, apiKey);
+            } else {
+                throw new Error('Web storage not initialized');
             }
 
             // Clear model cache when API key changes
@@ -103,17 +96,13 @@ class ProviderRegistry {
     }
 
     /**
-     * Get API key for a provider (async - uses secure storage)
+     * Get API key for a provider (async - uses secure web storage)
      */
     async getApiKey(providerId) {
         try {
-            // Use secure storage if available, fallback to localStorage
-            if (typeof window !== 'undefined' && window.secureStorage) {
-                return await window.secureStorage.getApiKey(providerId);
-            } else if (typeof localStorage !== 'undefined') {
-                // Fallback to localStorage (less secure)
-                const storageKey = `provider_${providerId}_apikey`;
-                return localStorage.getItem(storageKey);
+            // Use webStorage (IndexedDB + Web Crypto)
+            if (webStorage) {
+                return await webStorage.getApiKey(providerId);
             }
             return null;
         } catch (error) {
@@ -141,26 +130,7 @@ class ProviderRegistry {
 
         let models = [];
 
-        if (providerId === 'ollama') {
-            try {
-                const response = await fetch('http://localhost:11434/api/tags', {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Ollama list models failed: ${response.status}`);
-                }
-
-                const data = await response.json();
-                models = Array.isArray(data?.models)
-                    ? data.models.map(m => ({ id: m.name, name: m.name }))
-                    : [];
-            } catch (error) {
-                console.error('provider_list_models_error: ollama', error);
-                throw error;
-            }
-        } else if (providerId === 'openai') {
+        if (providerId === 'openai') {
             const apiKey = await this.getApiKey('openai');
             if (!apiKey) {
                 throw new Error('OpenAI API key not configured');
@@ -281,9 +251,7 @@ class ProviderRegistry {
 
         let adapter = null;
 
-        if (providerId === 'ollama') {
-            adapter = new OllamaAdapter();
-        } else if (providerId === 'openai') {
+        if (providerId === 'openai') {
             const { OpenAIAdapter } = require('../renderer/model-adapters');
             const apiKey = await this.getApiKey('openai');
             adapter = new OpenAIAdapter({

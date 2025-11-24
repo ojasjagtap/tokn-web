@@ -90,11 +90,6 @@ def get_model_client(config: Dict[str, Any]):
                 genai.configure(api_key=api_key)
         return genai
 
-    elif provider == 'ollama':
-        import openai
-        base_url = api_base or 'http://localhost:11434/v1'
-        return openai.OpenAI(base_url=base_url, api_key='ollama')
-
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 
@@ -111,7 +106,7 @@ def create_predict_fn(model_config: Dict[str, Any], prompt_template: str, input_
     Returns:
         Prediction function: (input_value: str) -> str
     """
-    provider = model_config.get('provider', 'ollama')
+    provider = model_config.get('provider', 'openai')
     model_id = model_config.get('model')
     client = get_model_client(model_config)
 
@@ -516,7 +511,7 @@ def main():
             formatted = current_prompt.format(**kwargs)
 
             # Call the model
-            provider = model_config.get('provider', 'ollama')
+            provider = model_config.get('provider', 'openai')
             model_id = model_config.get('model')
             client = get_model_client(model_config)
 
