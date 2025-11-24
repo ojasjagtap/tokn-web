@@ -40,7 +40,7 @@ def optimize_dspy():
                 }), 400
 
         # Import DSPy optimizer
-        from dspy.dspy_optimizer import optimize_prompt
+        from dspy_custom.dspy_optimizer import optimize_prompt
 
         # Transform API request to dspy_optimizer format
         config = {

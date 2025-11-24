@@ -540,6 +540,134 @@ def save_compiled_program(compiled_program: Any, save_path: str) -> str:
 # MAIN OPTIMIZATION WORKFLOW
 # ============================================================================
 
+def optimize_prompt(config: Dict[str, Any], progress_callback: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
+    """
+    Main optimization function that can be called directly from Flask route
+
+    Args:
+        config: Configuration dictionary
+        progress_callback: Optional callback for progress updates
+
+    Returns:
+        Result dictionary with type, optimized_prompt, metrics, etc.
+    """
+    # Redirect log_progress to use the callback if provided
+    if progress_callback:
+        global log_progress
+        original_log_progress = log_progress
+        def log_progress(message: str, data: Optional[Dict] = None):
+            progress_callback(message)
+
+    try:
+        # Step 1: Import DSPy (check if installed)
+        try:
+            import dspy
+        except ImportError as e:
+            error_details = traceback.format_exc()
+            print(f"[DSPy Import Error] {str(e)}")
+            print(f"[DSPy Import Error Traceback] {error_details}")
+            return {
+                'type': 'error',
+                'message': f'DSPy library not found: {str(e)}',
+                'traceback': error_details
+            }
+
+        # Step 2: Setup language model
+        if progress_callback:
+            progress_callback("Initializing DSPy optimizer...")
+        lm = setup_language_model(config['model_config'])
+
+        # Step 3: Prepare datasets
+        trainset = prepare_dataset(config['train_dataset'], 'train_dataset')
+
+        # Handle validation set
+        if 'val_dataset' in config and config['val_dataset']:
+            valset = prepare_dataset(config['val_dataset'], 'val_dataset')
+        else:
+            # Auto-split: 80% train, 20% val
+            split_idx = int(len(trainset) * 0.8)
+            if split_idx < len(trainset):
+                valset = trainset[split_idx:]
+                trainset = trainset[:split_idx]
+                if progress_callback:
+                    progress_callback(f"Using {len(trainset)} training examples, {len(valset)} validation examples")
+            else:
+                # Dataset too small, use all for train and val
+                valset = trainset
+                if progress_callback:
+                    progress_callback(f"Using {len(trainset)} examples for training and validation")
+
+        # Step 4: Create metric
+        metric = create_metric(config['metric_config'])
+
+        # Step 5: Create DSPy program with initial instruction
+        program_type = config.get('program_type', 'predict')
+        initial_instruction = config.get('initial_instruction', '')
+        program = create_dspy_program(program_type, initial_instruction)
+
+        # Step 6: Run optimization (MIPROv2 for instruction optimization)
+        optimizer_type = config.get('optimizer', 'MIPROv2')
+        optimizer_config = config.get('optimizer_config', {})
+
+        if optimizer_type in ['MIPRO', 'MIPROv2']:
+            compiled_program = run_mipro(
+                program, trainset, valset, metric, optimizer_config
+            )
+        else:
+            return {
+                'type': 'error',
+                'message': f"Unknown optimizer: {optimizer_type}. Use 'MIPROv2' for instruction optimization."
+            }
+
+        # Step 7: Evaluate compiled program
+        validation_score = evaluate_program(compiled_program, valset, metric)
+
+        # Step 8: Extract results
+        extracted_results = extract_optimized_results(compiled_program)
+
+        # Step 9: Save compiled program
+        save_path = config.get('save_path', './dspy_compiled_program')
+        saved_path = save_compiled_program(compiled_program, save_path)
+
+        # Step 10: Return success result
+        if progress_callback:
+            progress_callback(f"Optimization complete! Validation score: {(validation_score * 100):.1f}%")
+
+        # Format optimized prompt from instructions
+        optimized_prompt = ''
+        if extracted_results['instructions']:
+            optimized_prompt = '\n\n'.join(extracted_results['instructions'].values())
+
+        return {
+            'type': 'success',
+            'optimized_prompt': optimized_prompt,
+            'validation_score': float(validation_score),
+            'optimized_signature': extracted_results['instructions'],
+            'optimized_demos': extracted_results['demos'],
+            'predictors': extracted_results['predictors'],
+            'compiled_program_path': saved_path,
+            'dataset_sizes': {
+                'train': len(trainset),
+                'val': len(valset)
+            },
+            'optimizer': optimizer_type,
+            'program_type': program_type,
+            'metrics': {
+                'validation_score': float(validation_score)
+            }
+        }
+
+    except Exception as e:
+        error_msg = str(e)
+        error_trace = traceback.format_exc()
+
+        return {
+            'type': 'error',
+            'message': error_msg,
+            'traceback': error_trace
+        }
+
+
 def main():
     """Main optimization workflow"""
 
