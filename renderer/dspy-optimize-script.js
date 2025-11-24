@@ -54,7 +54,10 @@ function createDSPyOptimizeNodeData() {
         datasetSizes: {
             train: 0,
             val: 0
-        }
+        },
+
+        // UI state
+        valDatasetCollapsed: true  // Validation dataset section collapsed by default
     };
 }
 
@@ -182,10 +185,16 @@ function renderDSPyOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
 
         <!-- Validation Dataset -->
         <div class="inspector-section">
-            <label>Validation Dataset (optional)</label>
+            <div style="display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;" id="valDatasetHeader">
+                <svg width="12" height="12" style="flex-shrink: 0;">
+                    <use href="#${node.data.valDatasetCollapsed ? 'icon-chevron-right' : 'icon-chevron-down'}"></use>
+                </svg>
+                <label style="cursor: pointer; margin: 0;">Validation Dataset (optional)</label>
+            </div>
             <textarea id="inspectorValDataset" class="inspector-textarea code-editor" rows="10"
+                      style="display: ${node.data.valDatasetCollapsed ? 'none' : 'block'};"
                       placeholder='[&#10;  {"input": "What is 2+2?", "output": "4"},&#10;  {"input": "What is 3+3?", "output": "6"}&#10;]'>${JSON.stringify(node.data.valDataset, null, 2)}</textarea>
-            <div style="font-size: 10px; color: #888; margin-top: 4px;">
+            <div id="valDatasetInfo" style="display: ${node.data.valDatasetCollapsed ? 'none' : 'block'}; font-size: 10px; color: #888; margin-top: 4px;">
                 ${node.data.valDataset.length > 0 ? `${node.data.valDataset.length} examples` : 'Auto-split from training if empty'}
             </div>
         </div>
@@ -266,6 +275,16 @@ function renderDSPyOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
                     // Invalid JSON, keep old value
                 }
             });
+
+            // Validation Dataset - Collapse/Expand Toggle
+            const valDatasetHeader = document.getElementById('valDatasetHeader');
+            if (valDatasetHeader) {
+                valDatasetHeader.addEventListener('click', (e) => {
+                    node.data.valDatasetCollapsed = !node.data.valDatasetCollapsed;
+                    // Re-render inspector immediately
+                    context.updateInspector();
+                });
+            }
 
             // Validation Dataset
             const valDatasetInput = document.getElementById('inspectorValDataset');

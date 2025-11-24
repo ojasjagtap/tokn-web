@@ -993,7 +993,8 @@ function updateInspector() {
             edges: state.edges,
             nodes: state.nodes,
             addLog,
-            updateNodeDisplay
+            updateNodeDisplay,
+            updateInspector
         });
     } else if (node.type === 'gepa-optimize') {
         const inspector = renderGepaOptimizeInspector(node, updateNodeDisplay, state.edges, state.nodes, state);
