@@ -1063,7 +1063,7 @@ function renderGrid() {
     const offsetY = ty % screenTileSize;
 
     ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 0.5;
 
     // Vertical lines
     for (let x = offsetX; x < width; x += screenTileSize) {
