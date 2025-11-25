@@ -47,19 +47,20 @@ def get_model_client(config: Dict[str, Any]):
 
     Args:
         config: {
-            'provider': 'ollama' | 'openai' | 'anthropic' | 'google',
+            'provider': 'ollama' | 'openai' | 'anthropic' | 'google' | 'gemini' | any LiteLLM-supported provider,
             'model': 'model-name',
             'api_key': 'optional-api-key',
             'api_base': 'optional-base-url'
         }
 
     Returns:
-        Configured client instance
+        Configured client instance or config dict for LiteLLM fallback
     """
     provider = config.get('provider', 'ollama')
     api_key = config.get('api_key', '')
     api_base = config.get('api_base')
 
+    # Native client support for best compatibility
     if provider == 'openai':
         import openai
         client_config = {}
@@ -67,7 +68,7 @@ def get_model_client(config: Dict[str, Any]):
             client_config['api_key'] = api_key
         if api_base:
             client_config['base_url'] = api_base
-        return openai.OpenAI(**client_config)
+        return {'type': 'openai', 'client': openai.OpenAI(**client_config)}
 
     elif provider == 'anthropic':
         import anthropic
@@ -78,9 +79,9 @@ def get_model_client(config: Dict[str, Any]):
             api_key = os.environ.get('ANTHROPIC_API_KEY', '')
             if api_key:
                 client_config['api_key'] = api_key
-        return anthropic.Anthropic(**client_config)
+        return {'type': 'anthropic', 'client': anthropic.Anthropic(**client_config)}
 
-    elif provider == 'google':
+    elif provider in ['google', 'gemini']:
         import google.generativeai as genai
         if api_key:
             genai.configure(api_key=api_key)
@@ -88,10 +89,17 @@ def get_model_client(config: Dict[str, Any]):
             api_key = os.environ.get('GOOGLE_API_KEY', '')
             if api_key:
                 genai.configure(api_key=api_key)
-        return genai
+        return {'type': 'google', 'client': genai}
 
     else:
-        raise ValueError(f"Unsupported provider: {provider}")
+        # Use LiteLLM for all other providers (ollama, azure, cohere, etc.)
+        return {
+            'type': 'litellm',
+            'provider': provider,
+            'model': config.get('model'),
+            'api_key': api_key,
+            'api_base': api_base
+        }
 
 
 def create_predict_fn(model_config: Dict[str, Any], prompt_template: str, input_key: str = 'question'):
@@ -106,20 +114,22 @@ def create_predict_fn(model_config: Dict[str, Any], prompt_template: str, input_
     Returns:
         Prediction function: (input_value: str) -> str
     """
-    provider = model_config.get('provider', 'openai')
     model_id = model_config.get('model')
-    client = get_model_client(model_config)
+    client_info = get_model_client(model_config)
 
     def predict_fn(**kwargs) -> str:
-        """Generic prediction function"""
+        """Generic prediction function with LiteLLM fallback"""
         # Get the input value from kwargs
         input_value = kwargs.get(input_key, '')
 
         # Format the prompt template with the input
         formatted_prompt = prompt_template.replace(f'{{{{{input_key}}}}}', input_value)
 
-        # Call the appropriate model
-        if provider == 'openai' or provider == 'ollama':
+        # Call the appropriate model based on client type
+        client_type = client_info.get('type')
+
+        if client_type == 'openai':
+            client = client_info['client']
             completion = client.chat.completions.create(
                 model=model_id,
                 messages=[{"role": "user", "content": formatted_prompt}],
@@ -127,7 +137,8 @@ def create_predict_fn(model_config: Dict[str, Any], prompt_template: str, input_
             )
             return completion.choices[0].message.content
 
-        elif provider == 'anthropic':
+        elif client_type == 'anthropic':
+            client = client_info['client']
             message = client.messages.create(
                 model=model_id,
                 max_tokens=1024,
@@ -136,13 +147,35 @@ def create_predict_fn(model_config: Dict[str, Any], prompt_template: str, input_
             )
             return message.content[0].text
 
-        elif provider == 'google':
+        elif client_type == 'google':
+            client = client_info['client']
             model = client.GenerativeModel(model_id)
             response = model.generate_content(formatted_prompt)
             return response.text
 
+        elif client_type == 'litellm':
+            # Use LiteLLM for universal provider support
+            import litellm
+
+            # Build model string (provider/model)
+            provider = client_info['provider']
+            model_string = f"{provider}/{model_id}"
+
+            # Set up API key and base if provided
+            if client_info.get('api_key'):
+                os.environ[f"{provider.upper()}_API_KEY"] = client_info['api_key']
+            if client_info.get('api_base'):
+                os.environ[f"{provider.upper()}_API_BASE"] = client_info['api_base']
+
+            response = litellm.completion(
+                model=model_string,
+                messages=[{"role": "user", "content": formatted_prompt}],
+                temperature=0.0
+            )
+            return response.choices[0].message.content
+
         else:
-            raise ValueError(f"Unsupported provider: {provider}")
+            raise ValueError(f"Unsupported client type: {client_type}")
 
     return predict_fn
 
@@ -591,6 +624,219 @@ def main():
 
         log_error(error_msg, error_trace)
         sys.exit(1)
+
+
+def optimize_with_gepa(config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Main API function for GEPA optimization
+    Called from Flask route with configuration dict
+
+    Args:
+        config: Configuration dictionary with keys:
+            - prompt_template: Initial prompt template
+            - dataset: List of {input: str, expected_output: str}
+            - model_configs: List of model configs
+            - input_key: Key name for input (default: 'question')
+            - gepa_config: GEPA optimizer settings
+            - mlflow_config: MLflow tracking settings
+
+    Returns:
+        Result dictionary with keys:
+            - type: 'success' or 'error'
+            - optimized_prompt: Optimized prompt text
+            - metrics: Optimization metrics
+            - mlflow_run_id: MLflow run ID
+    """
+    try:
+        # Import MLflow
+        try:
+            import mlflow
+            from mlflow.genai.optimize import GepaPromptOptimizer
+            from mlflow.genai.scorers import Correctness, Safety
+        except ImportError as e:
+            return {
+                'type': 'error',
+                'message': f"MLflow library not found. Please install it with: pip install mlflow>=3.5.0. Error: {str(e)}"
+            }
+
+        # Initialize MLflow tracking
+        mlruns_dir = os.path.join(tempfile.gettempdir(), 'mlflow_gepa_tracking')
+        os.makedirs(mlruns_dir, exist_ok=True)
+
+        tracking_path = mlruns_dir.replace('\\', '/')
+        mlflow.set_tracking_uri(f"file:///{tracking_path}")
+
+        # Create or set experiment
+        experiment_name = config.get('mlflow_config', {}).get('experiment_name', 'tokn-gepa')
+        try:
+            experiment = mlflow.get_experiment_by_name(experiment_name)
+            if experiment is None:
+                mlflow.create_experiment(experiment_name)
+            mlflow.set_experiment(experiment_name)
+        except Exception:
+            pass  # Use default experiment
+
+        # Transform dataset format if needed
+        # Input: {input: str, expected_output: str}
+        # MLflow needs: {inputs: {...}, expectations: {expected_response: str}}
+        input_key = config.get('input_key', 'question')
+        train_data = []
+        for ex in config['dataset']:
+            train_data.append({
+                'inputs': {input_key: ex['input']},
+                'expectations': {'expected_response': ex['expected_output']}
+            })
+
+        # Get initial prompt
+        initial_prompt = config['prompt_template']
+
+        # Register prompt with MLflow
+        prompt_name = f'gepa_prompt_{hash(initial_prompt) % 1000000}'
+        try:
+            prompt = mlflow.genai.register_prompt(
+                name=prompt_name,
+                template=initial_prompt
+            )
+        except Exception:
+            # If registration fails, try to load existing
+            try:
+                prompt = mlflow.genai.load_prompt(f"prompts:/{prompt_name}/latest")
+            except Exception:
+                # Create a simple fallback
+                class SimplePrompt:
+                    def __init__(self, template):
+                        self.template = template
+                        self.uri = f"prompts:/{prompt_name}/latest"
+                prompt = SimplePrompt(initial_prompt)
+
+        # Get model config (use first model in list)
+        model_config = config['model_configs'][0] if config['model_configs'] else {}
+
+        # Get client info for prediction
+        model_id = model_config.get('model')
+        client_info = get_model_client(model_config)
+
+        # Create prediction function
+        def predict_fn(**kwargs) -> str:
+            """Prediction function for MLflow with LiteLLM fallback"""
+            # Format the prompt with inputs
+            formatted = initial_prompt
+            for key, value in kwargs.items():
+                formatted = formatted.replace(f'{{{{{key}}}}}', str(value))
+
+            # Call the model based on client type
+            client_type = client_info.get('type')
+
+            if client_type == 'openai':
+                client = client_info['client']
+                completion = client.chat.completions.create(
+                    model=model_id,
+                    messages=[{"role": "user", "content": formatted}],
+                    temperature=0.0
+                )
+                return completion.choices[0].message.content
+
+            elif client_type == 'anthropic':
+                client = client_info['client']
+                message = client.messages.create(
+                    model=model_id,
+                    max_tokens=1024,
+                    messages=[{"role": "user", "content": formatted}],
+                    temperature=0.0
+                )
+                return message.content[0].text
+
+            elif client_type == 'google':
+                client = client_info['client']
+                model = client.GenerativeModel(model_id)
+                response = model.generate_content(formatted)
+                return response.text
+
+            elif client_type == 'litellm':
+                # Use LiteLLM for universal provider support
+                import litellm
+
+                # Build model string (provider/model)
+                provider = client_info['provider']
+                model_string = f"{provider}/{model_id}"
+
+                # Set up API key and base if provided
+                if client_info.get('api_key'):
+                    os.environ[f"{provider.upper()}_API_KEY"] = client_info['api_key']
+                if client_info.get('api_base'):
+                    os.environ[f"{provider.upper()}_API_BASE"] = client_info['api_base']
+
+                response = litellm.completion(
+                    model=model_string,
+                    messages=[{"role": "user", "content": formatted}],
+                    temperature=0.0
+                )
+                return response.choices[0].message.content
+
+            else:
+                raise ValueError(f"Unsupported client type: {client_type}")
+
+        # Create scorers
+        # Use MLflow model format: provider:/model
+        provider = model_config.get('provider', 'openai')
+        model_name = model_config.get('model')
+
+        # Normalize provider names
+        if provider == 'google':
+            provider = 'gemini'
+
+        reflection_model = f"{provider}:/{model_name}"
+        scorers = [Correctness(model=reflection_model)]
+
+        # Create GEPA optimizer
+        gepa_config = config.get('gepa_config', {})
+        max_metric_calls = gepa_config.get('num_generations', 5) * gepa_config.get('population_size', 10)
+
+        optimizer = GepaPromptOptimizer(
+            reflection_model=reflection_model,
+            max_metric_calls=max_metric_calls,
+            display_progress_bar=False
+        )
+
+        # Run optimization
+        result = mlflow.genai.optimize_prompts(
+            predict_fn=predict_fn,
+            train_data=train_data,
+            prompt_uris=[prompt.uri],
+            optimizer=optimizer,
+            scorers=scorers
+        )
+
+        # Extract results
+        optimized_text = ''
+        if hasattr(result, 'optimized_prompts') and result.optimized_prompts:
+            opt_prompt = result.optimized_prompts[0]
+            if hasattr(opt_prompt, 'template'):
+                optimized_text = opt_prompt.template
+            else:
+                optimized_text = str(opt_prompt)
+
+        initial_score = float(result.initial_eval_score) if hasattr(result, 'initial_eval_score') else 0.0
+        final_score = float(result.final_eval_score) if hasattr(result, 'final_eval_score') else 0.0
+
+        return {
+            'type': 'success',
+            'optimized_prompt': optimized_text,
+            'metrics': {
+                'initial_score': initial_score,
+                'final_score': final_score,
+                'best_score': final_score
+            },
+            'mlflow_run_id': None,
+            'message': 'Optimization completed successfully'
+        }
+
+    except Exception as e:
+        return {
+            'type': 'error',
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        }
 
 
 if __name__ == '__main__':

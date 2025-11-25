@@ -5,6 +5,7 @@
  */
 
 import { executeGepaOptimization, checkGepaEnvironment, validateGepaConfig } from './gepa-worker.js';
+import { providerRegistry } from '../src/services/providerRegistry.js';
 // Note: path and os modules are Node.js-specific and not available in browser
 // These are commented out for web version - backend functionality is disabled
 // const path = require('path');
@@ -356,17 +357,18 @@ function validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes) {
     const modelNode = findConnectedModelNode(gepaOptimizeNode.id, edges, nodes);
     if (!modelNode) {
         errors.push('No model node connected to GEPA optimize node');
-    } else {
-        // Warn if provider is not natively supported
-        const provider = modelNode.data.provider || 'ollama';
-        if (!GEPA_NATIVE_PROVIDERS.includes(provider)) {
-            warnings.push(
-                `Warning: '${provider}' is not natively supported by MLflow GEPA. ` +
-                `Natively supported providers: ${GEPA_NATIVE_PROVIDERS.join(', ')}. ` +
-                `You may be able to use '${provider}' if you have LiteLLM installed (pip install litellm), but it is not guaranteed to work.`
-            );
-        }
     }
+    // else {
+    //     // Warn if provider is not natively supported
+    //     const provider = modelNode.data.provider || 'ollama';
+    //     if (!GEPA_NATIVE_PROVIDERS.includes(provider)) {
+    //         warnings.push(
+    //             `Warning: '${provider}' is not natively supported by MLflow GEPA. ` +
+    //             `Natively supported providers: ${GEPA_NATIVE_PROVIDERS.join(', ')}. ` +
+    //             `You may be able to use '${provider}' if you have LiteLLM installed (pip install litellm), but it is not guaranteed to work.`
+    //         );
+    //     }
+    // }
 
     // Return both errors and warnings
     return { errors, warnings };
@@ -484,25 +486,50 @@ async function executeGepaOptimizeNode(
         const modelName = modelNode.data.model;
         const mlflowModelString = `${provider}:/${modelName}`;
 
-        // Build configuration for Python worker
+        // Get API key from provider registry (global settings)
+        const apiKey = await providerRegistry.getApiKey(provider) || '';
+
+        // Transform train_dataset format from MLflow format to GEPA format
+        // MLflow format: { inputs: {...}, expectations: { expected_response: '...' }}
+        // GEPA format: { input: '...', expected_output: '...' }
+        const gepaDataset = gepaOptimizeNode.data.trainDataset.map(ex => {
+            // Extract input - could be nested object or string
+            let inputValue = ex.inputs;
+            if (typeof inputValue === 'object' && inputValue !== null) {
+                // If inputs is an object, take first value or stringify
+                const inputKeys = Object.keys(inputValue);
+                inputValue = inputKeys.length > 0 ? inputValue[inputKeys[0]] : JSON.stringify(inputValue);
+            }
+
+            // Extract expected output
+            let expectedOutput = ex.expectations?.expected_response || '';
+
+            return {
+                input: inputValue,
+                expected_output: expectedOutput
+            };
+        });
+
+        // Build configuration for GEPA worker (must match validateGepaConfig expectations)
         const config = {
-            model_config: {
+            prompt_template: initialPrompt,
+            dataset: gepaDataset,
+            model_configs: [{
                 provider: provider,
                 model: modelName,
-                api_key: modelNode.data.apiKey || ''
+                api_key: apiKey
+            }],
+            input_key: 'question',  // Default input key
+            gepa_config: {
+                population_size: 10,
+                num_generations: Math.ceil(gepaOptimizeNode.data.maxMetricCalls / 10),
+                mutation_rate: 0.3,
+                elite_size: 2
             },
-            initial_prompt: initialPrompt,
-            reflection_model: mlflowModelString,  // Use connected model for reflection
-            max_metric_calls: gepaOptimizeNode.data.maxMetricCalls,
-            scorer_config: {
-                scorers: [{
-                    type: gepaOptimizeNode.data.scorerType,
-                    model: mlflowModelString,  // Use connected model for scoring
-                    weight: 1.0
-                }]
-            },
-            train_dataset: gepaOptimizeNode.data.trainDataset,
-            prompt_name: `gepa_prompt_${gepaOptimizeNode.id}`
+            mlflow_config: {
+                tracking_uri: null,  // Use default
+                experiment_name: 'tokn-gepa'
+            }
         };
 
         // Execute optimization with progress callback
@@ -511,17 +538,24 @@ async function executeGepaOptimizeNode(
         }, signal);
 
         // Update node with results
-        gepaOptimizeNode.data.initialScore = result.initial_score;
-        gepaOptimizeNode.data.finalScore = result.final_score;
-        gepaOptimizeNode.data.optimizedPromptText = result.optimized_prompt_text;
-        gepaOptimizeNode.data.optimizationIterations = result.iterations || 0;
+        // Extract scores from metrics if available
+        const initialScore = result.metrics?.initial_score || 0;
+        const finalScore = result.metrics?.final_score || result.metrics?.best_score || 0;
+
+        gepaOptimizeNode.data.initialScore = initialScore;
+        gepaOptimizeNode.data.finalScore = finalScore;
+        gepaOptimizeNode.data.optimizedPromptText = result.optimized_prompt || '';
+        gepaOptimizeNode.data.optimizationIterations = result.metrics?.iterations || 0;
         gepaOptimizeNode.data.optimizationStatus = 'success';
 
         setNodeStatus(gepaOptimizeNode.id, 'success');
         updateNodeDisplay(gepaOptimizeNode.id);
 
-        const improvement = ((result.final_score - result.initial_score) * 100).toFixed(1);
-        addLog('info', `GEPA optimization complete! Score: ${(result.final_score * 100).toFixed(1)}% (+${improvement}%)`, gepaOptimizeNode.id);
+        const improvement = finalScore > 0 && initialScore > 0
+            ? ((finalScore - initialScore) * 100).toFixed(1)
+            : 'N/A';
+        const scoreDisplay = finalScore > 0 ? `${(finalScore * 100).toFixed(1)}%` : 'complete';
+        addLog('info', `GEPA optimization complete! Score: ${scoreDisplay} (${improvement > 0 ? '+' : ''}${improvement}% improvement)`, gepaOptimizeNode.id);
 
     } catch (error) {
         gepaOptimizeNode.data.optimizationStatus = 'error';

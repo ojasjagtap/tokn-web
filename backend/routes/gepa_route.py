@@ -39,7 +39,7 @@ def optimize_gepa():
                 }), 400
 
         # Import GEPA optimizer
-        from gepa.gepa_optimizer import optimize_with_gepa
+        from gepa_custom.gepa_optimizer import optimize_with_gepa
 
         # Transform API request to gepa_optimizer format
         config = {

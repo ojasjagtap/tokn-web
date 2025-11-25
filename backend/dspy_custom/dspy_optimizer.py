@@ -45,7 +45,7 @@ def setup_language_model(config: Dict[str, Any]):
 
     Args:
         config: {
-            'provider': 'openai' | 'anthropic' | 'google',
+            'provider': 'openai' | 'anthropic' | 'google' | 'gemini' | 'ollama' | any LiteLLM-supported provider,
             'model': 'model-name',
             'api_key': 'optional-api-key',
             'api_base': 'optional-base-url'
@@ -61,39 +61,33 @@ def setup_language_model(config: Dict[str, Any]):
     api_key = config.get('api_key', '')
     api_base = config.get('api_base')
 
-    if provider == 'openai':
-        # OpenAI models
-        if not api_key:
-            # Try environment variable
-            api_key = os.environ.get('OPENAI_API_KEY', '')
+    # Normalize provider names
+    # Map 'google' to 'gemini' for consistency
+    if provider == 'google':
+        provider = 'gemini'
 
-        lm = dspy.LM(
-            model=f'openai/{model_id}',
-            api_key=api_key
-        )
+    # Try environment variable for API key if not provided
+    if not api_key:
+        api_key = os.environ.get(f'{provider.upper()}_API_KEY', '')
 
-    elif provider == 'anthropic':
-        # Anthropic Claude models
-        if not api_key:
-            api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    # Set API key in environment for LiteLLM if provided
+    if api_key:
+        os.environ[f'{provider.upper()}_API_KEY'] = api_key
 
-        lm = dspy.LM(
-            model=f'anthropic/{model_id}',
-            api_key=api_key
-        )
+    # Set API base if provided
+    if api_base:
+        os.environ[f'{provider.upper()}_API_BASE'] = api_base
 
-    elif provider == 'google':
-        # Google Gemini models
-        if not api_key:
-            api_key = os.environ.get('GOOGLE_API_KEY', '')
+    # DSPy uses LiteLLM internally, so we can use the format: provider/model
+    # This supports ALL LiteLLM providers: openai, anthropic, gemini, ollama, azure, cohere, etc.
+    model_string = f'{provider}/{model_id}'
 
-        lm = dspy.LM(
-            model=f'gemini/{model_id}',
-            api_key=api_key
-        )
+    log_progress(f"Configuring DSPy with model: {model_string}")
 
-    else:
-        raise ValueError(f"Unsupported provider: {provider}. Use 'openai', 'anthropic', or 'google'.")
+    lm = dspy.LM(
+        model=model_string,
+        api_key=api_key if api_key else None
+    )
 
     # Configure DSPy to use this model
     dspy.configure(lm=lm)

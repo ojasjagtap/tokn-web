@@ -13,5 +13,8 @@ openai
 anthropic
 google-generativeai
 
+# Universal LLM interface
+litellm
+
 # Utilities
 python-dotenv==1.0.0
