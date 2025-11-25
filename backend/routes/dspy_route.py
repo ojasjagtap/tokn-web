@@ -79,6 +79,12 @@ def optimize_dspy():
             return jsonify({
                 'success': True,
                 'optimizedPrompt': result['optimized_prompt'],
+                'validation_score': result.get('validation_score', 0.0),
+                'optimized_signature': result.get('optimized_signature', {}),
+                'optimized_demos': result.get('optimized_demos', []),
+                'predictors': result.get('predictors', []),
+                'compiled_program_path': result.get('compiled_program_path', ''),
+                'dataset_sizes': result.get('dataset_sizes', {'train': 0, 'val': 0}),
                 'metrics': result.get('metrics', {}),
                 'logs': logs
             }), 200

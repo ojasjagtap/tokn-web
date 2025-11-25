@@ -98,10 +98,16 @@ async function executeDSPyOptimization(config, onProgress, signal = null) {
             onProgress('Optimization complete!', null);
         }
 
-        // Return result in expected format
+        // Return result in expected format (matching dspy_optimizer.py output)
         return {
             type: 'success',
             optimized_prompt: result.optimizedPrompt,
+            validation_score: result.validation_score || 0.0,
+            optimized_signature: result.optimized_signature || {},
+            optimized_demos: result.optimized_demos || [],
+            predictors: result.predictors || [],
+            compiled_program_path: result.compiled_program_path || '',
+            dataset_sizes: result.dataset_sizes || { train: 0, val: 0 },
             metrics: result.metrics || {},
             message: 'DSPy optimization completed successfully'
         };
