@@ -71,7 +71,7 @@ def optimize_dspy():
 
         def progress_callback(message):
             logs.append(message)
-            print(f"[DSPy] {message}")
+            print(message)  # Frontend adds [DSPy] prefix
 
         result = optimize_prompt(config, progress_callback)
 
@@ -103,7 +103,7 @@ def optimize_dspy():
         }), 500
 
     except Exception as e:
-        print(f"[DSPy Error] {str(e)}")
+        print(f"Error: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),

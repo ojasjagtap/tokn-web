@@ -333,8 +333,6 @@ def run_mipro(
         minibatch_size=minibatch_size
     )
 
-    log_progress("Optimization complete")
-
     return compiled_program
 
 
