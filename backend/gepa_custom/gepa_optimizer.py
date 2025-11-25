@@ -776,15 +776,25 @@ def optimize_with_gepa(config: Dict[str, Any]) -> Dict[str, Any]:
             else:
                 raise ValueError(f"Unsupported client type: {client_type}")
 
-        # Create scorers
-        # Use MLflow model format: provider:/model
+        # Set up API key in environment for LiteLLM (needed by scorers)
         provider = model_config.get('provider', 'openai')
         model_name = model_config.get('model')
+        api_key = model_config.get('api_key', '')
 
         # Normalize provider names
         if provider == 'google':
             provider = 'gemini'
 
+        # Set API key in environment for LiteLLM to use
+        if api_key:
+            os.environ[f"{provider.upper()}_API_KEY"] = api_key
+            # Also set GEMINI_API_KEY for consistency
+            if provider == 'gemini':
+                os.environ['GEMINI_API_KEY'] = api_key
+                os.environ['GOOGLE_API_KEY'] = api_key
+
+        # Create scorers
+        # Use MLflow model format: provider:/model
         reflection_model = f"{provider}:/{model_name}"
         scorers = [Correctness(model=reflection_model)]
 

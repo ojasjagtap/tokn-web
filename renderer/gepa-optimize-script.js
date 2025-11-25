@@ -357,18 +357,13 @@ function validateGepaOptimizeNode(gepaOptimizeNode, edges, nodes) {
     const modelNode = findConnectedModelNode(gepaOptimizeNode.id, edges, nodes);
     if (!modelNode) {
         errors.push('No model node connected to GEPA optimize node');
+    } else {
+        // Warn if provider is not natively supported
+        const provider = modelNode.data.provider || 'ollama';
+        if (!GEPA_NATIVE_PROVIDERS.includes(provider)) {
+            warnings.push(`'${provider}' not natively supported by MLflow GEPA (using LiteLLM fallback)`);
+        }
     }
-    // else {
-    //     // Warn if provider is not natively supported
-    //     const provider = modelNode.data.provider || 'ollama';
-    //     if (!GEPA_NATIVE_PROVIDERS.includes(provider)) {
-    //         warnings.push(
-    //             `Warning: '${provider}' is not natively supported by MLflow GEPA. ` +
-    //             `Natively supported providers: ${GEPA_NATIVE_PROVIDERS.join(', ')}. ` +
-    //             `You may be able to use '${provider}' if you have LiteLLM installed (pip install litellm), but it is not guaranteed to work.`
-    //         );
-    //     }
-    // }
 
     // Return both errors and warnings
     return { errors, warnings };
