@@ -88,7 +88,7 @@ def setup_language_model(config: Dict[str, Any]):
             api_key = os.environ.get('GOOGLE_API_KEY', '')
 
         lm = dspy.LM(
-            model=f'google/{model_id}',
+            model=f'gemini/{model_id}',
             api_key=api_key
         )
 
