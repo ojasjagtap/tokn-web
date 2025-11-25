@@ -1729,6 +1729,16 @@ async function runFlow() {
                     addLog,
                     state.runAbortController.signal
                 );
+            } else if (optimizeNode.type === 'gepa-optimize') {
+                await executeGepaOptimizeNode(
+                    optimizeNode,
+                    state.edges,
+                    state.nodes,
+                    updateNodeDisplay,
+                    setNodeStatus,
+                    addLog,
+                    state.runAbortController.signal
+                );
             }
         } catch (error) {
             if (error.name === 'AbortError') {
