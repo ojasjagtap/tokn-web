@@ -3,13 +3,9 @@
  * Complete implementation with nodes, wiring, inspector, logs, and run engine
  */
 
-console.log('[Script] Starting to load script.js...');
-
 // Import dependencies
 import fileOperations from '../src/services/fileOperations.js';
 import { providerRegistry } from '../src/services/providerRegistry.js';
-
-console.log('[Script] Imports loaded successfully');
 import {
     createToolNodeData,
     renderToolNode,
@@ -1504,7 +1500,7 @@ async function runFlow() {
     updateOptimizeButtons();
     updateModelButtons();
 
-    addLog('info', 'Flow run started');
+    addLog('info', '[Flow] Run started');
 
     // Reset all node statuses
     state.nodes.forEach((node) => {
@@ -1528,7 +1524,7 @@ async function runFlow() {
             const hasUserPrompt = sourceNode.data.userPrompt && sourceNode.data.userPrompt.trim();
 
             if (!hasSystemPrompt && !hasUserPrompt) {
-                addLog('error', `At least one prompt is required`, sourceNode.id);
+                addLog('error', `[${sourceNode.data.title}] At least one prompt is required`, sourceNode.id);
                 hasError = true;
             }
         }
@@ -1536,7 +1532,7 @@ async function runFlow() {
         // Validate Model nodes
         if (targetNode?.type === 'model') {
             if (!targetNode.data.model || targetNode.data.model.trim() === '') {
-                addLog('error', `Model must be selected`, targetNode.id);
+                addLog('error', `[${targetNode.data.title}] Model must be selected`, targetNode.id);
                 hasError = true;
             }
         }
@@ -1550,7 +1546,7 @@ async function runFlow() {
             const validationErrors = validateDSPyOptimizeNode(targetNode, state.edges, state.nodes);
             if (validationErrors.length > 0) {
                 for (const error of validationErrors) {
-                    addLog('error', error, targetNode.id);
+                    addLog('error', `[${targetNode.data.title}] ${error}`, targetNode.id);
                 }
                 hasError = true;
             }
@@ -1562,10 +1558,10 @@ async function runFlow() {
             edge.sourcePin === 'output' &&
             edge.targetPin === 'input') {
 
-            const validationErrors = validateGepaOptimizeNode(targetNode, state.edges, state.nodes);
-            if (validationErrors.length > 0) {
-                for (const error of validationErrors) {
-                    addLog('error', error, targetNode.id);
+            const validation = validateGepaOptimizeNode(targetNode, state.edges, state.nodes);
+            if (validation.errors && validation.errors.length > 0) {
+                for (const error of validation.errors) {
+                    addLog('error', `[${targetNode.data.title}] ${error}`, targetNode.id);
                 }
                 hasError = true;
             }
@@ -1633,7 +1629,7 @@ async function runFlow() {
     }
 
     if (modelNodesToRun.length === 0) {
-        addLog('error', 'No runnable Prompt → Model path found');
+        addLog('error', '[Flow] No runnable Prompt → Model path found');
         state.isRunning = false;
         document.getElementById('runButton').disabled = false;
         document.getElementById('cancelButton').disabled = true;
@@ -1652,7 +1648,7 @@ async function runFlow() {
         }
 
         setNodeStatus(modelNode.id, 'running');
-        addLog('info', `Running ${modelNode.data.title}`);
+        addLog('info', `[${modelNode.data.title}] Running`);
 
         // Build tools catalog for this model
         const registeredTools = findRegisteredTools(modelNode.id, state.edges, state.nodes);
@@ -1683,7 +1679,7 @@ async function runFlow() {
 
             const duration = ((Date.now() - startTime) / 1000).toFixed(2);
             setNodeStatus(modelNode.id, 'success');
-            addLog('info', `${modelNode.data.title} completed in ${duration}s`);
+            addLog('info', `[${modelNode.data.title}] Completed (${duration}s)`);
 
             // Update connected Optimize nodes to enable their Run buttons
             for (const edge of state.edges.values()) {
@@ -1701,11 +1697,11 @@ async function runFlow() {
         } catch (error) {
             if (error.name === 'AbortError') {
                 updateNodeDisplay(modelNode.id);
-                addLog('warn', 'Flow run canceled');
+                addLog('warn', '[Flow] Run canceled');
                 break;
             } else {
                 updateNodeDisplay(modelNode.id);
-                addLog('error', `Error: ${error.message}`, modelNode.id);
+                addLog('error', `[${modelNode.data.title}] ${error.message}`, modelNode.id);
             }
         }
     }
@@ -1716,7 +1712,7 @@ async function runFlow() {
     for (const optimizeNode of optimizeNodesToRun) {
         if (state.runAbortController.signal.aborted) break;
 
-        addLog('info', `Running ${optimizeNode.data.title}`);
+        addLog('info', `[${optimizeNode.data.title}] Running`);
 
         try {
             if (optimizeNode.type === 'dspy-optimize') {
@@ -1742,10 +1738,10 @@ async function runFlow() {
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                addLog('warn', 'Optimization canceled');
+                addLog('warn', '[Flow] Optimization canceled');
                 break;
             } else {
-                addLog('error', `Optimize error: ${error.message}`);
+                addLog('error', `[${optimizeNode.data.title}] ${error.message}`);
             }
         }
 
@@ -1756,7 +1752,7 @@ async function runFlow() {
     }
 
     if (!state.runAbortController.signal.aborted) {
-        addLog('info', 'Flow run completed');
+        addLog('info', '[Flow] Run completed');
     }
 
     state.isRunning = false;
@@ -1888,7 +1884,7 @@ async function runModelNode(nodeId) {
 
     // Validate prompt node
     if (!promptNode) {
-        addLog('error', `Not connected to a Prompt node`, modelNode.id);
+        addLog('error', `[${modelNode.data.title}] Not connected to a Prompt node`, modelNode.id);
         return;
     }
 
@@ -1896,13 +1892,13 @@ async function runModelNode(nodeId) {
     const hasUserPrompt = promptNode.data.userPrompt && promptNode.data.userPrompt.trim();
 
     if (!hasSystemPrompt && !hasUserPrompt) {
-        addLog('error', `At least one prompt is required`, promptNode.id);
+        addLog('error', `[${promptNode.data.title}] At least one prompt is required`, promptNode.id);
         return;
     }
 
     // Validate model selection
     if (!modelNode.data.model || modelNode.data.model.trim() === '') {
-        addLog('error', `Model must be selected`, modelNode.id);
+        addLog('error', `[${modelNode.data.title}] Model must be selected`, modelNode.id);
         return;
     }
 
@@ -1933,7 +1929,7 @@ async function runModelNode(nodeId) {
             combinedPrompt = `User: ${promptNode.data.userPrompt}`;
         }
 
-        addLog('info', `Running ${modelNode.data.title}`);
+        addLog('info', `[${modelNode.data.title}] Running`);
 
         // Build tools catalog for this model
         const registeredTools = findRegisteredTools(modelNode.id, state.edges, state.nodes);
@@ -1963,15 +1959,15 @@ async function runModelNode(nodeId) {
 
         const duration = ((Date.now() - startTime) / 1000).toFixed(2);
         setNodeStatus(modelNode.id, 'success');
-        addLog('info', `${modelNode.data.title} completed in ${duration}s`);
+        addLog('info', `[${modelNode.data.title}] Completed (${duration}s)`);
     } catch (error) {
         if (error.name === 'AbortError') {
             setNodeStatus(modelNode.id, 'error');
             updateNodeDisplay(modelNode.id);
-            addLog('warn', `Run canceled`, modelNode.id);
+            addLog('warn', `[${modelNode.data.title}] Run canceled`, modelNode.id);
         } else {
             updateNodeDisplay(modelNode.id);
-            addLog('error', `Error: ${error.message}`, modelNode.id);
+            addLog('error', `[${modelNode.data.title}] ${error.message}`, modelNode.id);
         }
     } finally {
         // Re-enable run buttons
@@ -2117,7 +2113,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
             } catch (e) {
                 // Ignore parsing errors
             }
-            addLog('error', `provider_auth_error: ${provider}`);
+            addLog('error', `[${provider}] Authentication error`);
             throw new Error(errorMessage);
         }
 
@@ -2146,7 +2142,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
                     pendingToolCalls.push(...parsed.toolCalls);
                 }
             } catch (error) {
-                addLog('error', `adapter_parse_error: ${error.message}`);
+                addLog('error', `[Adapter] Parse error: ${error.message}`);
             }
         }
 
@@ -2193,7 +2189,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
         }
 
         // Log detected tool calls
-        addLog('info', `Calling tool${pendingToolCalls.length > 1 ? 's' : ''}: ${pendingToolCalls.map(tc => tc.name).join(', ')}`);
+        addLog('info', `[Tools] Calling: ${pendingToolCalls.map(tc => tc.name).join(', ')}`);
 
         // Execute tool calls
         let hasToolError = false;
@@ -2207,7 +2203,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
             );
 
             if (!toolNode) {
-                addLog('error', `Tool "${name}" not found`);
+                addLog('error', `[Tools] "${name}" not found`);
                 hasToolError = true;
                 break;
             }
@@ -2215,7 +2211,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
             // Validate arguments against schema
             const validationError = validateToolArguments(args, toolNode.data.parametersSchema);
             if (validationError) {
-                addLog('error', `${name}: ${validationError}`, toolNode.id);
+                addLog('error', `[${name}] ${validationError}`, toolNode.id);
                 hasToolError = true;
                 break;
             }
@@ -2235,12 +2231,12 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
 
                 if (normalized.ok) {
                     if (normalized.kind === 'bytes') {
-                        addLog('info', `${name} completed in ${duration}s (${normalized.result.length} bytes)`);
+                        addLog('info', `[${name}] Completed (${duration}s, ${normalized.result.length} bytes)`);
                     } else {
-                        addLog('info', `${name} completed in ${duration}s`);
+                        addLog('info', `[${name}] Completed (${duration}s)`);
                     }
                 } else {
-                    addLog('error', `${name}: ${normalized.error.message}`, toolNode.id);
+                    addLog('error', `[${name}] ${normalized.error.message}`, toolNode.id);
                     hasToolError = true;
                     break;
                 }
@@ -2255,7 +2251,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
                 });
             } catch (error) {
                 const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-                addLog('error', `${name}: ${error.message} (${duration}s)`, toolNode.id);
+                addLog('error', `[${name}] ${error.message} (${duration}s)`, toolNode.id);
                 hasToolError = true;
                 break;
             }
@@ -2270,7 +2266,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
     }
 
     if (iterationCount >= maxIterations) {
-        addLog('warn', 'Tool-calling loop exceeded maximum iterations');
+        addLog('warn', '[Tools] Loop exceeded maximum iterations');
     }
 }
 
@@ -2323,7 +2319,7 @@ async function loadModels() {
         state.availableModels = models;
 
         if (models.length === 0) {
-            addLog('warn', 'No local models found');
+            addLog('warn', '[Ollama] No local models found');
         }
     } catch (err) {
         // addLog('error', `Failed to load models: ${err.message}`);
@@ -2393,7 +2389,7 @@ async function saveOpenAISettings() {
 
         // Try to fetch models to validate the key
         const models = await providerRegistry.listModels('openai');
-        addLog('info', `OpenAI configured with ${models.length} models`);
+        addLog('info', `[OpenAI] Configured (${models.length} models)`);
 
         // Refresh models in state if a model node is using OpenAI
         for (const node of state.nodes.values()) {
@@ -2403,7 +2399,7 @@ async function saveOpenAISettings() {
             }
         }
     } catch (error) {
-        addLog('error', `provider_auth_error: openai - ${error.message}`);
+        addLog('error', `[OpenAI] ${error.message}`);
         alert(`Failed to validate OpenAI API key: ${error.message}`);
     }
 }
@@ -2413,7 +2409,7 @@ async function removeOpenAISettings() {
         await providerRegistry.removeApiKey('openai');
         document.getElementById('openaiApiKey').value = '';
         await updateOpenAIStatus();
-        addLog('info', 'OpenAI API key removed');
+        addLog('info', '[OpenAI] API key removed');
     }
 }
 
@@ -2444,7 +2440,7 @@ async function saveClaudeSettings() {
 
         // Try to fetch models to validate the key
         const models = await providerRegistry.listModels('claude');
-        addLog('info', `Claude configured with ${models.length} models`);
+        addLog('info', `[Claude] Configured (${models.length} models)`);
 
         // Refresh models in state if a model node is using Claude
         for (const node of state.nodes.values()) {
@@ -2454,7 +2450,7 @@ async function saveClaudeSettings() {
             }
         }
     } catch (error) {
-        addLog('error', `provider_auth_error: claude - ${error.message}`);
+        addLog('error', `[Claude] ${error.message}`);
         alert(`Failed to validate Claude API key: ${error.message}`);
     }
 }
@@ -2464,7 +2460,7 @@ async function removeClaudeSettings() {
         await providerRegistry.removeApiKey('claude');
         document.getElementById('claudeApiKey').value = '';
         await updateClaudeStatus();
-        addLog('info', 'Claude API key removed');
+        addLog('info', '[Claude] API key removed');
     }
 }
 
@@ -2495,7 +2491,7 @@ async function saveGeminiSettings() {
 
         // Try to fetch models to validate the key
         const models = await providerRegistry.listModels('gemini');
-        addLog('info', `Gemini configured with ${models.length} models`);
+        addLog('info', `[Gemini] Configured (${models.length} models)`);
 
         // Refresh models in state if a model node is using Gemini
         for (const node of state.nodes.values()) {
@@ -2505,7 +2501,7 @@ async function saveGeminiSettings() {
             }
         }
     } catch (error) {
-        addLog('error', `provider_auth_error: gemini - ${error.message}`);
+        addLog('error', `[Gemini] ${error.message}`);
         alert(`Failed to validate Gemini API key: ${error.message}`);
     }
 }
@@ -2515,7 +2511,7 @@ async function removeGeminiSettings() {
         await providerRegistry.removeApiKey('gemini');
         document.getElementById('geminiApiKey').value = '';
         await updateGeminiStatus();
-        addLog('info', 'Gemini API key removed');
+        addLog('info', '[Gemini] API key removed');
     }
 }
 
@@ -2660,7 +2656,7 @@ async function saveWorkflow() {
             // Delete autosave file since we've saved manually
             await fileOperations.deleteAutosave();
 
-            addLog('info', `Workflow saved to ${result.filePath}`);
+            addLog('info', `[Workflow] Saved to ${result.filePath}`);
             return true;
         } else {
             if (result.error !== 'Save cancelled') {
@@ -2669,7 +2665,7 @@ async function saveWorkflow() {
             return false;
         }
     } catch (error) {
-        addLog('error', `Failed to save workflow: ${error.message}`);
+        addLog('error', `[Workflow] Failed to save: ${error.message}`);
         alert(`Failed to save workflow: ${error.message}`);
         return false;
     }
@@ -2698,13 +2694,13 @@ async function saveWorkflowAs() {
             // Delete autosave file since we've saved manually
             await fileOperations.deleteAutosave();
 
-            addLog('info', `Workflow saved to ${result.filePath}`);
+            addLog('info', `[Workflow] Saved to ${result.filePath}`);
             return true;
         } else {
             return false; // User canceled
         }
     } catch (error) {
-        addLog('error', `Failed to save workflow: ${error.message}`);
+        addLog('error', `[Workflow] Failed to save: ${error.message}`);
         alert(`Failed to save workflow: ${error.message}`);
         return false;
     }
@@ -2748,10 +2744,10 @@ async function openWorkflow() {
         // Delete autosave file since we've opened a saved workflow
         await fileOperations.deleteAutosave();
 
-        addLog('info', `Workflow loaded from ${result.filePath}`);
+        addLog('info', `[Workflow] Loaded from ${result.filePath}`);
         return true;
     } catch (error) {
-        addLog('error', `Failed to open workflow: ${error.message}`);
+        addLog('error', `[Workflow] Failed to open: ${error.message}`);
         alert(`Failed to open workflow: ${error.message}`);
         return false;
     }
@@ -2815,10 +2811,10 @@ async function newWorkflow() {
         updateRunButton();
         updateLogsUI();
 
-        addLog('info', 'New workflow created');
+        addLog('info', '[Workflow] Created');
         return true;
     } catch (error) {
-        addLog('error', `Failed to create new workflow: ${error.message}`);
+        addLog('error', `[Workflow] Failed to create: ${error.message}`);
         alert(`Failed to create new workflow: ${error.message}`);
         return false;
     }
@@ -2894,10 +2890,10 @@ async function checkAutoSaveRecovery() {
         // Mark as dirty since it's from autosave
         markWorkflowDirty();
 
-        addLog('info', 'Workflow restored from auto-save');
+        addLog('info', '[Workflow] Restored from auto-save');
     } catch (error) {
         console.error('Auto-save recovery failed:', error);
-        addLog('warn', 'Failed to restore auto-save');
+        addLog('warn', '[Workflow] Failed to restore auto-save');
     }
 }
 
@@ -2927,16 +2923,10 @@ function stopAutoSave() {
 // Using IIFE instead of DOMContentLoaded since React loads script after DOM is ready
 (async function initializeApp() {
     try {
-        console.log('[Script] Initializing app...');
-        console.log('[Script] Document ready state:', document.readyState);
-
         // Wait for DOM to be ready if needed
         if (document.readyState === 'loading') {
-            console.log('[Script] Waiting for DOMContentLoaded...');
             await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
         }
-
-        console.log('[Script] DOM is ready, starting initialization...');
 
         // Load editor settings from localStorage
     const savedSnapToGrid = localStorage.getItem('snapToGrid');
@@ -3073,8 +3063,6 @@ function stopAutoSave() {
 
     // Start auto-save interval
     startAutoSave();
-
-    console.log('[Script] Initialization complete!');
     } catch (error) {
         console.error('[Script] Initialization error:', error);
         console.error('[Script] Stack trace:', error.stack);

@@ -343,10 +343,10 @@ function validateTool(node, addLog, getAllToolNodesFn) {
     // Log validation errors only
     if (issues.length > 0) {
         issues.forEach(issue => {
-            addLog('error', `Tool validation: ${issue}`, node.id);
+            addLog('error', `[${node.data.name}] ${issue}`, node.id);
         });
     } else {
-        addLog('info', `Tool validation passed`, node.id);
+        addLog('info', `[${node.data.name}] Validation passed`, node.id);
     }
 }
 

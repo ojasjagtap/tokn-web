@@ -315,7 +315,7 @@ def register_prompt_with_mlflow(prompt_name: str, prompt_template: str) -> Any:
             name=prompt_name,
             template=prompt_template
         )
-        log_progress(f"Registered prompt '{prompt_name}' with MLflow")
+        log_progress(f"Registered prompt '{prompt_name}'")
         return prompt
     except Exception as e:
         # If registration fails (e.g., name exists), try to load it
@@ -360,9 +360,7 @@ def run_gepa_optimization(
     import mlflow
     from mlflow.genai.optimize import GepaPromptOptimizer
 
-    log_progress(f"Starting GEPA optimization with reflection model: {reflection_model}")
-    log_progress(f"Max metric calls: {max_metric_calls}")
-    log_progress(f"Training examples: {len(train_data)}")
+    log_progress(f"Starting optimization ({len(train_data)} examples, {max_metric_calls} max calls)")
 
     # Create GEPA optimizer
     optimizer = GepaPromptOptimizer(
@@ -384,7 +382,7 @@ def run_gepa_optimization(
     if aggregation:
         optimize_args['aggregation'] = aggregation
 
-    log_progress("Running GEPA optimization (this may take several minutes)...")
+    log_progress("Running optimization...")
 
     # Run optimization
     result = mlflow.genai.optimize_prompts(**optimize_args)
@@ -447,12 +445,8 @@ def extract_optimization_results(result: Any) -> Dict[str, Any]:
         elif hasattr(result, 'num_iterations'):
             extracted['iterations'] = int(result.num_iterations)
 
-        log_progress(f"Extracted results: initial={extracted['initial_score']:.3f}, final={extracted['final_score']:.3f}")
-
     except Exception as e:
         log_progress(f"Warning: Could not fully extract results: {str(e)}")
-        import traceback
-        log_progress(f"Traceback: {traceback.format_exc()}")
 
     return extracted
 
@@ -493,30 +487,20 @@ def main():
         tracking_path = mlruns_dir.replace('\\', '/')
         # Use file:/// (three slashes) for local file URIs
         mlflow.set_tracking_uri(f"file:///{tracking_path}")
-        log_progress(f"Initialized MLflow tracking at: {mlruns_dir}")
 
         # Create or set experiment (required for optimization tracking)
         experiment_name = "gepa_optimization"
         try:
             experiment = mlflow.get_experiment_by_name(experiment_name)
             if experiment is None:
-                experiment_id = mlflow.create_experiment(experiment_name)
-                log_progress(f"Created MLflow experiment: {experiment_name}")
-            else:
-                experiment_id = experiment.experiment_id
-                log_progress(f"Using existing MLflow experiment: {experiment_name}")
+                mlflow.create_experiment(experiment_name)
             mlflow.set_experiment(experiment_name)
-        except Exception as e:
-            log_progress(f"Warning: Could not set experiment: {str(e)}")
-            # Continue anyway - MLflow will use default experiment
-
-        # Step 4: Prepare dataset
-        log_progress("Preparing dataset...")
+        except Exception:
+            pass  # Continue anyway - MLflow will use default experiment
         train_data = prepare_dataset(config['train_dataset'], 'train_dataset')
 
         # Step 5: Extract initial prompt template
         initial_prompt = config.get('initial_prompt', 'Answer the following question: {{question}}')
-        log_progress(f"Initial prompt template: {initial_prompt[:100]}...")
 
         # Step 6: Determine input key from dataset
         # Extract the first input key from the dataset
@@ -525,14 +509,12 @@ def main():
             input_keys = list(train_data[0]['inputs'].keys())
             if input_keys:
                 input_key = input_keys[0]
-                log_progress(f"Detected input key: {input_key}")
 
         # Step 7: Register prompt with MLflow
         prompt_name = config.get('prompt_name', f'gepa_prompt_{os.getpid()}')
         prompt = register_prompt_with_mlflow(prompt_name, initial_prompt)
 
         # Step 8: Create prediction function
-        log_progress("Creating prediction function...")
         model_config = config['model_config']
 
         # We need to create a predict_fn that MLflow can call
@@ -574,12 +556,9 @@ def main():
                 raise ValueError(f"Unsupported provider: {provider}")
 
         # Step 9: Create scorers
-        log_progress("Creating scorers...")
         scorer_config = config.get('scorer_config', {'scorers': [{'type': 'correctness'}]})
         scorers = create_scorers(scorer_config)
         aggregation = create_aggregation_fn(scorer_config)
-
-        log_progress(f"Using {len(scorers)} scorer(s)")
 
         # Step 10: Run GEPA optimization
         reflection_model = config.get('reflection_model', 'openai/gpt-4')
@@ -599,8 +578,6 @@ def main():
         extracted = extract_optimization_results(result)
 
         # Step 12: Return success result
-        improvement = extracted['final_score'] - extracted['initial_score']
-        log_progress(f"Optimization complete! Score improved by {improvement:+.3f}")
 
         success_result = {
             'type': 'success',

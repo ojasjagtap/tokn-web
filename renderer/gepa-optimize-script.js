@@ -233,14 +233,14 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
                     // Show warnings
                     if (validation.warnings && validation.warnings.length > 0) {
                         validation.warnings.forEach(warning => {
-                            context.addLog('warning', warning, node.id);
+                            context.addLog('warn', `[${node.data.title}] ${warning}`, node.id);
                         });
                     }
 
                     // Show errors and stop if any
                     if (validation.errors && validation.errors.length > 0) {
                         validation.errors.forEach(error => {
-                            context.addLog('error', error, node.id);
+                            context.addLog('error', `[${node.data.title}] ${error}`, node.id);
                         });
                         return;
                     }
@@ -383,20 +383,20 @@ function isGepaOptimizeNodeReady(gepaOptimizeNode, edges, nodes) {
 function applyOptimizedPrompt(gepaOptimizeNode, edges, nodes, addLog, updateNodeDisplay) {
     // Check if we have results
     if (!gepaOptimizeNode.data.optimizedPromptText || gepaOptimizeNode.data.finalScore === 0) {
-        addLog('error', 'No optimization results to apply. Run optimization first.', gepaOptimizeNode.id);
+        addLog('error', `[${gepaOptimizeNode.data.title}] No optimization results to apply`, gepaOptimizeNode.id);
         return;
     }
 
     // Find connected model node, then find its prompt node
     const modelNode = findConnectedModelNode(gepaOptimizeNode.id, edges, nodes);
     if (!modelNode) {
-        addLog('error', 'No model node connected', gepaOptimizeNode.id);
+        addLog('error', `[${gepaOptimizeNode.data.title}] No model node connected`, gepaOptimizeNode.id);
         return;
     }
 
     const promptNode = findPromptNodeForModel(modelNode.id, edges, nodes);
     if (!promptNode) {
-        addLog('error', 'No prompt node connected to the model node', gepaOptimizeNode.id);
+        addLog('error', `[${gepaOptimizeNode.data.title}] No prompt node connected to model`, gepaOptimizeNode.id);
         return;
     }
 
@@ -408,9 +408,9 @@ function applyOptimizedPrompt(gepaOptimizeNode, edges, nodes, addLog, updateNode
         updateNodeDisplay(promptNode.id);
 
         const improvement = ((gepaOptimizeNode.data.finalScore - gepaOptimizeNode.data.initialScore) * 100).toFixed(1);
-        addLog('info', `Applied optimized prompt (+${improvement}% improvement)`, gepaOptimizeNode.id);
+        addLog('info', `[${gepaOptimizeNode.data.title}] Applied to prompt (+${improvement}% improvement)`, gepaOptimizeNode.id);
     } else {
-        addLog('warning', 'No optimized prompt text found in optimization results', gepaOptimizeNode.id);
+        addLog('warn', `[${gepaOptimizeNode.data.title}] No optimized prompt text found`, gepaOptimizeNode.id);
     }
 }
 
@@ -435,12 +435,12 @@ async function executeGepaOptimizeNode(
 
     // Log warnings
     if (validation.warnings && validation.warnings.length > 0) {
-        validation.warnings.forEach(warning => addLog('warning', warning, gepaOptimizeNode.id));
+        validation.warnings.forEach(warning => addLog('warn', `[${gepaOptimizeNode.data.title}] ${warning}`, gepaOptimizeNode.id));
     }
 
     // Check for errors
     if (validation.errors && validation.errors.length > 0) {
-        validation.errors.forEach(error => addLog('error', error, gepaOptimizeNode.id));
+        validation.errors.forEach(error => addLog('error', `[${gepaOptimizeNode.data.title}] ${error}`, gepaOptimizeNode.id));
         setNodeStatus(gepaOptimizeNode.id, 'error');
         return;
     }
@@ -448,7 +448,7 @@ async function executeGepaOptimizeNode(
     // Find connected model node
     const modelNode = findConnectedModelNode(gepaOptimizeNode.id, edges, nodes);
     if (!modelNode) {
-        addLog('error', 'No model node connected', gepaOptimizeNode.id);
+        addLog('error', `[${gepaOptimizeNode.data.title}] No model node connected`, gepaOptimizeNode.id);
         setNodeStatus(gepaOptimizeNode.id, 'error');
         return;
     }
@@ -458,7 +458,7 @@ async function executeGepaOptimizeNode(
     gepaOptimizeNode.data.optimizationStatus = 'running';
     updateNodeDisplay(gepaOptimizeNode.id);
 
-    addLog('info', 'Starting GEPA optimization...', gepaOptimizeNode.id);
+    addLog('info', `[${gepaOptimizeNode.data.title}] Starting optimization`, gepaOptimizeNode.id);
 
     // Find connected prompt node to get system prompt
     const promptNode = findPromptNodeForModel(modelNode.id, edges, nodes);
@@ -472,7 +472,6 @@ async function executeGepaOptimizeNode(
         const inputKeys = Object.keys(firstExample?.inputs || {});
         const inputKey = inputKeys.length > 0 ? inputKeys[0] : 'question';
         initialPrompt = `Answer the following ${inputKey}: {{${inputKey}}}`;
-        addLog('warning', `No system prompt found - using default template`, gepaOptimizeNode.id);
     }
 
     try {
@@ -529,7 +528,14 @@ async function executeGepaOptimizeNode(
 
         // Execute optimization with progress callback
         const result = await executeGepaOptimization(config, (message, data) => {
-            // Progress messages go to logs panel without storing
+            // Detect log level from message content
+            let level = 'info';
+            if (message.toLowerCase().startsWith('warning:') || message.toLowerCase().includes('warning:')) {
+                level = 'warn';
+            } else if (message.toLowerCase().startsWith('error:') || message.toLowerCase().includes('error:')) {
+                level = 'error';
+            }
+            addLog(level, `[${gepaOptimizeNode.data.title}] ${message}`, gepaOptimizeNode.id);
         }, signal);
 
         // Update node with results
@@ -550,7 +556,7 @@ async function executeGepaOptimizeNode(
             ? ((finalScore - initialScore) * 100).toFixed(1)
             : 'N/A';
         const scoreDisplay = finalScore > 0 ? `${(finalScore * 100).toFixed(1)}%` : 'complete';
-        addLog('info', `GEPA optimization complete! Score: ${scoreDisplay} (${improvement > 0 ? '+' : ''}${improvement}% improvement)`, gepaOptimizeNode.id);
+        addLog('info', `[${gepaOptimizeNode.data.title}] Optimization complete (${scoreDisplay}, ${improvement > 0 ? '+' : ''}${improvement}%)`, gepaOptimizeNode.id);
 
     } catch (error) {
         gepaOptimizeNode.data.optimizationStatus = 'error';
@@ -570,7 +576,7 @@ async function executeGepaOptimizeNode(
             errorMsg += ' - Check your API key configuration';
         }
 
-        addLog('error', `GEPA optimization failed: ${errorMsg}`, gepaOptimizeNode.id);
+        addLog('error', `[${gepaOptimizeNode.data.title}] ${errorMsg}`, gepaOptimizeNode.id);
     }
 }
 

@@ -82,7 +82,7 @@ def setup_language_model(config: Dict[str, Any]):
     # This supports ALL LiteLLM providers: openai, anthropic, gemini, ollama, azure, cohere, etc.
     model_string = f'{provider}/{model_id}'
 
-    log_progress(f"Configuring DSPy with model: {model_string}")
+    log_progress(f"Configuring model: {model_string}")
 
     lm = dspy.LM(
         model=model_string,
@@ -324,7 +324,7 @@ def run_mipro(
 
     # Compile the program
     # Note: Don't pass num_trials when using auto mode - it's set automatically
-    log_progress(f"Running MIPROv2 optimization (this may take a few minutes)...")
+    log_progress("Running optimization...")
     compiled_program = optimizer.compile(
         student=program,
         trainset=trainset,
@@ -361,7 +361,7 @@ def evaluate_program(
     import dspy
     from dspy.evaluate import Evaluate
 
-    log_progress(f"Evaluating on {len(devset)} examples...")
+    log_progress(f"Evaluating ({len(devset)} examples)")
 
     evaluator = Evaluate(
         devset=devset,
@@ -487,12 +487,8 @@ def extract_optimized_results(compiled_program: Any) -> Dict[str, Any]:
                 # The formatted prompt is the complete optimized prompt
                 results['instructions'][name] = str(formatted)
 
-        log_progress(f"Extracted {len(results['demos'])} demos and {len(results['instructions'])} optimized instructions")
-
     except Exception as e:
         log_progress(f"Warning: Could not fully extract results: {str(e)}")
-        import traceback
-        log_progress(f"Traceback: {traceback.format_exc()}")
 
     return results
 
@@ -623,7 +619,7 @@ def optimize_prompt(config: Dict[str, Any], progress_callback: Optional[Callable
 
         # Step 10: Return success result
         if progress_callback:
-            progress_callback(f"Optimization complete! Validation score: {(validation_score * 100):.1f}%")
+            progress_callback(f"Complete ({(validation_score * 100):.1f}% score)")
 
         # Format optimized prompt from instructions
         optimized_prompt = ''
@@ -681,7 +677,7 @@ def main():
             )
 
         # Step 3: Setup language model
-        log_progress("Initializing DSPy optimizer...")
+        log_progress("Initializing optimizer")
         lm = setup_language_model(config['model_config'])
 
         # Step 4: Prepare datasets
@@ -732,7 +728,7 @@ def main():
         saved_path = save_compiled_program(compiled_program, save_path)
 
         # Step 11: Return success result
-        log_progress(f"Optimization complete! Validation score: {(validation_score * 100):.1f}%")
+        log_progress(f"Complete ({(validation_score * 100):.1f}% score)")
 
         success_result = {
             'type': 'success',

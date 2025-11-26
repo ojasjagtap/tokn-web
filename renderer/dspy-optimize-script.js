@@ -312,7 +312,7 @@ function renderDSPyOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
                     const errors = validateDSPyOptimizeNode(node, context.edges, context.nodes);
                     if (errors.length > 0) {
                         errors.forEach(error => {
-                            context.addLog('error', error, node.id);
+                            context.addLog('error', `[${node.data.title}] ${error}`, node.id);
                         });
                         return;
                     }
@@ -438,20 +438,20 @@ function isDSPyOptimizeNodeReady(dspyOptimizeNode, edges, nodes) {
 function applyOptimizedPrompt(dspyOptimizeNode, edges, nodes, addLog, updateNodeDisplay) {
     // Check if we have results
     if (!dspyOptimizeNode.data.optimizedSignature || dspyOptimizeNode.data.validationScore === 0) {
-        addLog('error', 'No optimization results to apply. Run optimization first.', dspyOptimizeNode.id);
+        addLog('error', `[${dspyOptimizeNode.data.title}] No optimization results to apply`, dspyOptimizeNode.id);
         return;
     }
 
     // Find connected model node, then find its prompt node
     const modelNode = findConnectedModelNode(dspyOptimizeNode.id, edges, nodes);
     if (!modelNode) {
-        addLog('error', 'No model node connected', dspyOptimizeNode.id);
+        addLog('error', `[${dspyOptimizeNode.data.title}] No model node connected`, dspyOptimizeNode.id);
         return;
     }
 
     const promptNode = findPromptNodeForModel(modelNode.id, edges, nodes);
     if (!promptNode) {
-        addLog('error', 'No prompt node connected to the model node', dspyOptimizeNode.id);
+        addLog('error', `[${dspyOptimizeNode.data.title}] No prompt node connected to model`, dspyOptimizeNode.id);
         return;
     }
 
@@ -467,11 +467,9 @@ function applyOptimizedPrompt(dspyOptimizeNode, edges, nodes, addLog, updateNode
     if (instructionText) {
         promptNode.data.systemPrompt = instructionText;
         updateNodeDisplay(promptNode.id);
-        addLog('info', `Applied optimized instruction to prompt node (score: ${(dspyOptimizeNode.data.validationScore * 100).toFixed(1)}%)`, dspyOptimizeNode.id);
-        addLog('info', `New system prompt: "${instructionText.substring(0, 200)}${instructionText.length > 200 ? '...' : ''}"`, dspyOptimizeNode.id);
+        addLog('info', `[${dspyOptimizeNode.data.title}] Applied to prompt (${(dspyOptimizeNode.data.validationScore * 100).toFixed(1)}% score)`, dspyOptimizeNode.id);
     } else {
-        addLog('warning', 'No instruction text found in optimization results', dspyOptimizeNode.id);
-        addLog('info', `optimizedSignature contents: ${JSON.stringify(dspyOptimizeNode.data.optimizedSignature)}`, dspyOptimizeNode.id);
+        addLog('warn', `[${dspyOptimizeNode.data.title}] No instruction text found`, dspyOptimizeNode.id);
     }
 }
 
@@ -494,7 +492,7 @@ async function executeDSPyOptimizeNode(
     // Validate prerequisites
     const errors = validateDSPyOptimizeNode(dspyOptimizeNode, edges, nodes);
     if (errors.length > 0) {
-        errors.forEach(error => addLog('error', error, dspyOptimizeNode.id));
+        errors.forEach(error => addLog('error', `[${dspyOptimizeNode.data.title}] ${error}`, dspyOptimizeNode.id));
         setNodeStatus(dspyOptimizeNode.id, 'error');
         return;
     }
@@ -502,7 +500,7 @@ async function executeDSPyOptimizeNode(
     // Find connected model node
     const modelNode = findConnectedModelNode(dspyOptimizeNode.id, edges, nodes);
     if (!modelNode) {
-        addLog('error', 'No model node connected', dspyOptimizeNode.id);
+        addLog('error', `[${dspyOptimizeNode.data.title}] No model node connected`, dspyOptimizeNode.id);
         setNodeStatus(dspyOptimizeNode.id, 'error');
         return;
     }
@@ -513,17 +511,11 @@ async function executeDSPyOptimizeNode(
     dspyOptimizeNode.data.optimizationLog = [];
     updateNodeDisplay(dspyOptimizeNode.id);
 
-    addLog('info', 'Starting DSPy optimization...', dspyOptimizeNode.id);
+    addLog('info', `[${dspyOptimizeNode.data.title}] Starting optimization`, dspyOptimizeNode.id);
 
     // Find connected prompt node to get system prompt
     const promptNode = findPromptNodeForModel(modelNode.id, edges, nodes);
     const systemPrompt = promptNode ? (promptNode.data.systemPrompt || '') : '';
-
-    if (systemPrompt) {
-        addLog('info', `Using system prompt from connected prompt node`, dspyOptimizeNode.id);
-    } else {
-        addLog('warning', 'No system prompt found - DSPy will optimize from scratch', dspyOptimizeNode.id);
-    }
 
     try {
         // Get API key from providerRegistry (not stored in node data for security)
@@ -531,7 +523,7 @@ async function executeDSPyOptimizeNode(
         const apiKey = await providerRegistry.getApiKey(modelNode.data.provider);
 
         if (!apiKey) {
-            addLog('error', `No API key configured for provider: ${modelNode.data.provider}`, dspyOptimizeNode.id);
+            addLog('error', `[${dspyOptimizeNode.data.title}] No API key for ${modelNode.data.provider}`, dspyOptimizeNode.id);
             setNodeStatus(dspyOptimizeNode.id, 'error');
             return;
         }
@@ -575,7 +567,14 @@ async function executeDSPyOptimizeNode(
 
         // Execute optimization with progress callback
         const result = await executeDSPyOptimization(config, (message, data) => {
-            addLog('info', `DSPy: ${message}`, dspyOptimizeNode.id);
+            // Detect log level from message content
+            let level = 'info';
+            if (message.toLowerCase().startsWith('warning:') || message.toLowerCase().includes('warning:')) {
+                level = 'warn';
+            } else if (message.toLowerCase().startsWith('error:') || message.toLowerCase().includes('error:')) {
+                level = 'error';
+            }
+            addLog(level, `[${dspyOptimizeNode.data.title}] ${message}`, dspyOptimizeNode.id);
             dspyOptimizeNode.data.optimizationLog.push(message);
             updateNodeDisplay(dspyOptimizeNode.id);
         }, signal);
@@ -592,7 +591,7 @@ async function executeDSPyOptimizeNode(
         setNodeStatus(dspyOptimizeNode.id, 'success');
         updateNodeDisplay(dspyOptimizeNode.id);
 
-        addLog('info', `DSPy optimization complete! Score: ${(result.validation_score * 100).toFixed(1)}%`, dspyOptimizeNode.id);
+        addLog('info', `[${dspyOptimizeNode.data.title}] Optimization complete (${(result.validation_score * 100).toFixed(1)}% score)`, dspyOptimizeNode.id);
 
     } catch (error) {
         dspyOptimizeNode.data.optimizationStatus = 'error';
@@ -610,7 +609,7 @@ async function executeDSPyOptimizeNode(
             errorMsg += ' - Install Python 3.8+ and add to PATH';
         }
 
-        addLog('error', `DSPy optimization failed: ${errorMsg}`, dspyOptimizeNode.id);
+        addLog('error', `[${dspyOptimizeNode.data.title}] ${errorMsg}`, dspyOptimizeNode.id);
     }
 }
 
