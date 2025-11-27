@@ -30,9 +30,6 @@ async function fetchUrl(args) {
         throw new Error(\`Failed to fetch: \${error.message}\`);
     }
 }
-
-// Execute the tool (async supported)
-return fetchUrl(args);
 `;
 
 /**
@@ -159,16 +156,17 @@ function renderToolInspector(node, updateNodeDisplay, addLog) {
                         </div>
                         <div class="info-tooltip-section">
                             <div class="info-tooltip-label">Example:</div>
-                            <div class="info-tooltip-code">const fs = require('fs');
-
-function myTool(args) {
-  const data = fs.readFileSync(
-    args.path, 'utf-8'
+                            <div class="info-tooltip-code">async function fetchData(args) {
+  const response = await fetch(
+    args.url
   );
-  return data; // string
-}
 
-return myTool(args);</div>
+  if (!response.ok) {
+    throw new Error('Fetch failed');
+  }
+
+  return await response.json();
+}</div>
                         </div>
                         <div class="info-tooltip-section">
                             <div class="info-tooltip-label">Error Handling:</div>

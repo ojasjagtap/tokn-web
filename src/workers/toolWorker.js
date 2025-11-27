@@ -93,14 +93,8 @@ function createToolFunction(toolCode) {
         }
         const funcName = funcMatch[1];
 
-        // Return the function
-        if (typeof this[funcName] === 'function') {
-            return this[funcName];
-        } else if (typeof self[funcName] === 'function') {
-            return self[funcName];
-        } else {
-            throw new Error('Tool function not found: ' + funcName);
-        }
+        // Return the function by evaluating its name in the local scope
+        return eval(funcName);
     `;
 
     try {
