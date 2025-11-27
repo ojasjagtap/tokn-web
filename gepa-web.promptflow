@@ -1,0 +1,187 @@
+{
+  "version": 1,
+  "viewport": {
+    "scale": 1.061076460950001,
+    "tx": 85.5504261056029,
+    "ty": -38.54248358547133
+  },
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "prompt",
+      "x": 0,
+      "y": 96,
+      "width": 240,
+      "height": 277,
+      "status": "idle",
+      "zIndex": 74,
+      "collapsed": false,
+      "data": {
+        "title": "Prompt",
+        "systemPrompt": "Classify the sentiment of the text.",
+        "userPrompt": ""
+      }
+    },
+    {
+      "id": "node-2",
+      "type": "gepa-optimize",
+      "x": 640,
+      "y": 288,
+      "width": 240,
+      "height": 446,
+      "status": "error",
+      "zIndex": 76,
+      "collapsed": false,
+      "data": {
+        "title": "GEPA",
+        "maxMetricCalls": 50,
+        "scorerType": "correctness",
+        "useMultipleScorers": false,
+        "trainDataset": [
+          {
+            "inputs": {
+              "text": "This movie was amazing and I loved every minute!"
+            },
+            "expectations": {
+              "expected_response": "positive"
+            }
+          },
+          {
+            "inputs": {
+              "text": "Terrible film, complete waste of time."
+            },
+            "expectations": {
+              "expected_response": "negative"
+            }
+          },
+          {
+            "inputs": {
+              "text": "It was okay, nothing special."
+            },
+            "expectations": {
+              "expected_response": "neutral"
+            }
+          },
+          {
+            "inputs": {
+              "text": "Best purchase I've ever made!"
+            },
+            "expectations": {
+              "expected_response": "positive"
+            }
+          },
+          {
+            "inputs": {
+              "text": "Awful experience, would not recommend."
+            },
+            "expectations": {
+              "expected_response": "negative"
+            }
+          },
+          {
+            "inputs": {
+              "text": "The product works as expected."
+            },
+            "expectations": {
+              "expected_response": "neutral"
+            }
+          },
+          {
+            "inputs": {
+              "text": "I'm thrilled with this service!"
+            },
+            "expectations": {
+              "expected_response": "positive"
+            }
+          },
+          {
+            "inputs": {
+              "text": "Disappointing and overpriced."
+            },
+            "expectations": {
+              "expected_response": "negative"
+            }
+          },
+          {
+            "inputs": {
+              "text": "It's fine for the price."
+            },
+            "expectations": {
+              "expected_response": "neutral"
+            }
+          },
+          {
+            "inputs": {
+              "text": "Absolutely fantastic!"
+            },
+            "expectations": {
+              "expected_response": "positive"
+            }
+          }
+        ],
+        "datasetMode": "manual",
+        "optimizationStatus": "error",
+        "initialScore": 0.6,
+        "finalScore": 0.9,
+        "optimizedPromptText": "# Task:  \n## component_name  \ngepa_prompt_node-2  \n\n## current_text  \nClassify the sentiment of the text.  \n\n## trace  \n### Item 1  \n#### name  \npredict_fn  \n\n#### inputs  \n##### kwargs  \n###### text  \n(Provide the text for classification)  \n\n## outputs  \nThe sentiment classification cannot be determined without the text. Please provide the text, and I will classify its sentiment for you.  \n\n## expectations  \n### expected_response  \n[negative/positive/nother/other]  \n\n## rationales  \n### correctness  \n[Based on the text in the document, the expected response is provided here]",
+        "optimizationIterations": 0,
+        "optimizationLog": [
+          "Initialized MLflow tracking at: C:\\Users\\ojasj\\AppData\\Local\\Temp\\mlflow_gepa_tracking",
+          "Using existing MLflow experiment: gepa_optimization",
+          "Preparing dataset...",
+          "Initial prompt template: Classify the sentiment of the text....",
+          "Detected input key: text",
+          "Registered prompt 'gepa_prompt_node-2' with MLflow",
+          "Creating prediction function...",
+          "Creating scorers...",
+          "Using 1 scorer(s)",
+          "Starting GEPA optimization with reflection model: ollama:/qwen3:0.6b",
+          "Max metric calls: 50",
+          "Training examples: 2",
+          "Running GEPA optimization (this may take several minutes)...",
+          "Optimization complete",
+          "Extracted results: initial=1.000, final=1.000",
+          "Optimization complete! Score improved by +0.000"
+        ]
+      }
+    },
+    {
+      "id": "node-3",
+      "type": "model",
+      "x": 320,
+      "y": 192,
+      "width": 240,
+      "height": 455,
+      "status": "success",
+      "zIndex": 78,
+      "collapsed": false,
+      "data": {
+        "title": "Model",
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "temperature": 0.7,
+        "maxTokens": 512,
+        "output": "Okay, I can help with that! Please provide the text you would like me to classify.\n\nI will analyze its sentiment and tell you if it's generally:\n*   **Positive**\n*   **Negative**\n*   **Neutral**\n*   (or sometimes **Mixed**, if applicable)"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "sourceNodeId": "node-1",
+      "sourcePin": "prompt",
+      "targetNodeId": "node-3",
+      "targetPin": "prompt"
+    },
+    {
+      "id": "edge-2",
+      "sourceNodeId": "node-3",
+      "sourcePin": "output",
+      "targetNodeId": "node-2",
+      "targetPin": "input"
+    }
+  ],
+  "nodeIdCounter": 5,
+  "edgeIdCounter": 3,
+  "maxZIndex": 79
+}

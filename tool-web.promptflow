@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "viewport": {
+    "scale": 1,
+    "tx": 0,
+    "ty": 0
+  },
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "prompt",
+      "x": 64,
+      "y": 64,
+      "width": 240,
+      "height": 65,
+      "status": "idle",
+      "zIndex": 14,
+      "collapsed": true,
+      "data": {
+        "title": "Prompt",
+        "systemPrompt": "You are a helpful assistant that can fetch data from URLs. When asked about weather or API data, use the fetch_url tool to retrieve information from the provided URL.",
+        "userPrompt": "Please fetch the current weather data from this API: https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current_weather=true"
+      }
+    },
+    {
+      "id": "node-2",
+      "type": "tool",
+      "x": 64,
+      "y": 160,
+      "width": 240,
+      "height": 137,
+      "status": "idle",
+      "zIndex": 9,
+      "collapsed": false,
+      "data": {
+        "name": "fetch_url",
+        "description": "Fetches content from a URL using HTTP GET request",
+        "parametersSchema": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The URL to fetch (http/https)"
+            }
+          },
+          "required": [
+            "url"
+          ]
+        },
+        "implementation": {
+          "type": "script",
+          "language": "javascript",
+          "code": "// Fetches content from a URL using the Fetch API\n// Web Worker environment - no require(), no fs, pure JavaScript only\n\nasync function fetchUrl(args) {\n    try {\n        const response = await fetch(args.url);\n\n        if (!response.ok) {\n            throw new Error(`HTTP error! status: ${response.status}`);\n        }\n\n        const contentType = response.headers.get('content-type');\n\n        // Return appropriate format based on content type\n        if (contentType && contentType.includes('application/json')) {\n            return await response.json();\n        } else {\n            return await response.text();\n        }\n    } catch (error) {\n        throw new Error(`Failed to fetch: ${error.message}`);\n    }\n}\n"
+        }
+      }
+    },
+    {
+      "id": "node-3",
+      "type": "model",
+      "x": 384,
+      "y": 64,
+      "width": 240,
+      "height": 365,
+      "status": "success",
+      "zIndex": 12,
+      "collapsed": false,
+      "data": {
+        "title": "Model",
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "temperature": 0.7,
+        "maxTokens": 512,
+        "output": "The current weather in the specified location is 13.4°C, with a wind speed of 4.6 km/h blowing at 198°. It is cloudy and currently night. The time of the observation is 2025-11-26T22:30."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "sourceNodeId": "node-1",
+      "sourcePin": "prompt",
+      "targetNodeId": "node-3",
+      "targetPin": "prompt"
+    },
+    {
+      "id": "edge-2",
+      "sourceNodeId": "node-2",
+      "sourcePin": "register",
+      "targetNodeId": "node-3",
+      "targetPin": "tools"
+    }
+  ],
+  "nodeIdCounter": 4,
+  "edgeIdCounter": 3,
+  "maxZIndex": 15
+}

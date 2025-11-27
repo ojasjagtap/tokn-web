@@ -1,0 +1,207 @@
+{
+  "version": 1,
+  "viewport": {
+    "scale": 0.5929605000000003,
+    "tx": 1.5446516114946363,
+    "ty": 75.0331190364687
+  },
+  "nodes": [
+    {
+      "id": "node-1",
+      "type": "prompt",
+      "x": -64,
+      "y": -192,
+      "width": 240,
+      "height": 277,
+      "status": "idle",
+      "zIndex": 230,
+      "collapsed": false,
+      "data": {
+        "title": "Prompt",
+        "systemPrompt": "Classify the sentiment of the text.",
+        "userPrompt": ""
+      }
+    },
+    {
+      "id": "node-2",
+      "type": "model",
+      "x": 256,
+      "y": 32,
+      "width": 240,
+      "height": 350,
+      "status": "success",
+      "zIndex": 236,
+      "collapsed": false,
+      "data": {
+        "title": "Model",
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "temperature": 0.7,
+        "maxTokens": 512,
+        "output": "Please provide the text you would like me to classify! I need the content to determine its sentiment (positive, negative, or neutral)."
+      }
+    },
+    {
+      "id": "node-4",
+      "type": "dspy-optimize",
+      "x": 576,
+      "y": -64,
+      "width": 240,
+      "height": 269,
+      "status": "success",
+      "zIndex": 238,
+      "collapsed": false,
+      "data": {
+        "title": "DSPy",
+        "optimizer": "MIPROv2",
+        "optimizationMode": "light",
+        "programType": "predict",
+        "metricType": "exact_match",
+        "metricThreshold": null,
+        "maxBootstrappedDemos": 4,
+        "maxLabeledDemos": 16,
+        "maxRounds": 1,
+        "numTrials": 30,
+        "minibatch": true,
+        "minibatchSize": 35,
+        "trainDataset": [
+          {
+            "input": "This movie was amazing and I loved every minute!",
+            "output": "positive"
+          },
+          {
+            "input": "Terrible film, complete waste of time.",
+            "output": "negative"
+          },
+          {
+            "input": "It was okay, nothing special.",
+            "output": "neutral"
+          },
+          {
+            "input": "Best purchase I've ever made!",
+            "output": "positive"
+          },
+          {
+            "input": "Awful experience, would not recommend.",
+            "output": "negative"
+          },
+          {
+            "input": "The product works as expected.",
+            "output": "neutral"
+          },
+          {
+            "input": "I'm thrilled with this service!",
+            "output": "positive"
+          },
+          {
+            "input": "Disappointing and overpriced.",
+            "output": "negative"
+          },
+          {
+            "input": "It's fine for the price.",
+            "output": "neutral"
+          },
+          {
+            "input": "Absolutely fantastic!",
+            "output": "positive"
+          }
+        ],
+        "valDataset": [],
+        "datasetMode": "manual",
+        "optimizationStatus": "success",
+        "optimizedDemos": [
+          {
+            "input": "Disappointing and overpriced.",
+            "output": "negative",
+            "predictor": "predict"
+          },
+          {
+            "input": "Awful experience, would not recommend.",
+            "output": "negative",
+            "predictor": "predict"
+          },
+          {
+            "input": "The product works as expected.",
+            "output": "neutral",
+            "predictor": "predict"
+          },
+          {
+            "input": "This movie was amazing and I loved every minute!",
+            "output": "positive",
+            "predictor": "predict"
+          },
+          {
+            "input": "I'm thrilled with this service!",
+            "output": "positive",
+            "predictor": "predict"
+          },
+          {
+            "input": "It was okay, nothing special.",
+            "output": "neutral",
+            "predictor": "predict"
+          },
+          {
+            "input": "Best purchase I've ever made!",
+            "output": "positive",
+            "predictor": "predict"
+          },
+          {
+            "input": "Terrible film, complete waste of time.",
+            "output": "negative",
+            "predictor": "predict"
+          }
+        ],
+        "predictors": [
+          {
+            "demo_count": 8,
+            "instruction": "Your task is to perform sentiment analysis. Given the `question` field, which contains a text snippet, determine its emotional tone and produce the `answer` field with one of the following labels: 'positive', 'negative', or 'neutral'.",
+            "name": "predict",
+            "type": "Predict"
+          }
+        ],
+        "optimizationLog": [
+          "Connecting to backend API...",
+          "Initializing DSPy optimizer...",
+          "Using 8 training examples, 2 validation examples",
+          "Starting MIPROv2 optimization",
+          "Optimizing with mode=light",
+          "Running MIPROv2 optimization (this may take a few minutes)...",
+          "Optimization complete",
+          "Evaluating on 2 examples...",
+          "Extracted 8 demos and 1 optimized instructions",
+          "Optimization complete! Validation score: 100.0%",
+          "Optimization complete!"
+        ],
+        "datasetSizes": {
+          "train": 8,
+          "val": 2
+        },
+        "valDatasetCollapsed": true,
+        "validationScore": 1,
+        "optimizedSignature": {
+          "predict": "Your task is to perform sentiment analysis. Given the `question` field, which contains a text snippet, determine its emotional tone and produce the `answer` field with one of the following labels: 'positive', 'negative', or 'neutral'."
+        },
+        "compiledProgramPath": "./dspy_compiled_program"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1",
+      "sourceNodeId": "node-1",
+      "sourcePin": "prompt",
+      "targetNodeId": "node-2",
+      "targetPin": "prompt"
+    },
+    {
+      "id": "edge-3",
+      "sourceNodeId": "node-2",
+      "sourcePin": "output",
+      "targetNodeId": "node-4",
+      "targetPin": "input"
+    }
+  ],
+  "nodeIdCounter": 9,
+  "edgeIdCounter": 4,
+  "maxZIndex": 239
+}
