@@ -1,9 +1,9 @@
 {
   "version": 1,
   "viewport": {
-    "scale": 1,
-    "tx": 0,
-    "ty": 0
+    "scale": 1.1399682555154556,
+    "tx": 156.54938143791995,
+    "ty": -17.936133294148476
   },
   "nodes": [
     {
@@ -14,7 +14,7 @@
       "width": 240,
       "height": 65,
       "status": "idle",
-      "zIndex": 14,
+      "zIndex": 32,
       "collapsed": true,
       "data": {
         "title": "Prompt",
@@ -26,11 +26,11 @@
       "id": "node-2",
       "type": "tool",
       "x": 64,
-      "y": 160,
+      "y": 192,
       "width": 240,
-      "height": 137,
+      "height": 445,
       "status": "idle",
-      "zIndex": 9,
+      "zIndex": 30,
       "collapsed": false,
       "data": {
         "name": "fetch_url",
@@ -51,7 +51,8 @@
           "type": "script",
           "language": "javascript",
           "code": "// Fetches content from a URL using the Fetch API\n// Web Worker environment - no require(), no fs, pure JavaScript only\n\nasync function fetchUrl(args) {\n    try {\n        const response = await fetch(args.url);\n\n        if (!response.ok) {\n            throw new Error(`HTTP error! status: ${response.status}`);\n        }\n\n        const contentType = response.headers.get('content-type');\n\n        // Return appropriate format based on content type\n        if (contentType && contentType.includes('application/json')) {\n            return await response.json();\n        } else {\n            return await response.text();\n        }\n    } catch (error) {\n        throw new Error(`Failed to fetch: ${error.message}`);\n    }\n}\n"
-        }
+        },
+        "lastOutput": "{\n  \"latitude\": 40.710335,\n  \"longitude\": -73.99309,\n  \"generationtime_ms\": 0.13113021850585938,\n  \"utc_offset_seconds\": 0,\n  \"timezone\": \"GMT\",\n  \"timezone_abbreviation\": \"GMT\",\n  \"elevation\": 32,\n  \"current_weather_units\": {\n    \"time\": \"iso8601\",\n    \"interval\": \"seconds\",\n    \"temperature\": \"°C\",\n    \"windspeed\": \"km/h\",\n    \"winddirection\": \"°\",\n    \"is_day\": \"\",\n    \"weathercode\": \"wmo code\"\n  },\n  \"current_weather\": {\n    \"time\": \"2025-11-27T22:45\",\n    \"interval\": 900,\n    \"temperature\": 3.5,\n    \"windspeed\": 19.3,\n    \"winddirection\": 256,\n    \"is_day\": 0,\n    \"weathercode\": 2\n  }\n}"
       }
     },
     {
@@ -60,9 +61,9 @@
       "x": 384,
       "y": 64,
       "width": 240,
-      "height": 365,
+      "height": 410,
       "status": "success",
-      "zIndex": 12,
+      "zIndex": 36,
       "collapsed": false,
       "data": {
         "title": "Model",
@@ -70,7 +71,7 @@
         "model": "gemini-2.5-flash",
         "temperature": 0.7,
         "maxTokens": 512,
-        "output": "The current weather in the specified location is 13.4°C, with a wind speed of 4.6 km/h blowing at 198°. It is cloudy and currently night. The time of the observation is 2025-11-26T22:30."
+        "output": "Here is the current weather data:\n\nTemperature: 3.5°C\nWind Speed: 19.3 km/h\nWind Direction: 256°\nWeather Code: 2\nIs Day: No\nTime: 2025-11-27T22:45"
       }
     }
   ],
@@ -92,5 +93,5 @@
   ],
   "nodeIdCounter": 4,
   "edgeIdCounter": 3,
-  "maxZIndex": 15
+  "maxZIndex": 37
 }
