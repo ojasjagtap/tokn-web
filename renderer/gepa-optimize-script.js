@@ -152,23 +152,19 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
         </div>
 
         <!-- Results Display -->
-        ${node.data.finalScore > 0 ? `
-            <div class="inspector-section">
-                <label>Optimization Results</label>
-                <div style="background: #1a1a1a; padding: 12px; border-radius: 4px; font-size: 12px;">
-                    <div style="margin-bottom: 8px;">
-                        <strong style="color: #4a9eff;">Final Score:</strong>
-                        <span style="color: #4a9eff;">${(node.data.finalScore * 100).toFixed(1)}%</span>
-                    </div>
-                    ${node.data.optimizedPromptText ? `
-                        <div>
-                            <strong>Optimized Prompt:</strong>
-                            <div style="margin-top: 4px; color: #888;">${node.data.optimizedPromptText}</div>
-                        </div>
-                    ` : ''}
+        <div class="inspector-section">
+            <label>Results</label>
+            <div style="background: #1a1a1a; padding: 12px; border-radius: 4px; font-size: 12px;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: #4a9eff;">Final Score:</strong>
+                    <span style="color: #4a9eff;">${node.data.finalScore > 0 ? (node.data.finalScore * 100).toFixed(1) + '%' : ''}</span>
+                </div>
+                <div>
+                    <strong>Optimized Prompt:</strong>
+                    <div style="margin-top: 4px; color: ${node.data.optimizedPromptText ? '#888' : '#555'};">${node.data.optimizedPromptText || ''}</div>
                 </div>
             </div>
-        ` : ''}
+        </div>
 
         <!-- Action Buttons -->
         <div class="inspector-section">

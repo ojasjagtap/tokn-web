@@ -202,25 +202,24 @@ function renderDSPyOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
         </div>
 
         <!-- Results Display -->
-        ${node.data.validationScore > 0 ? `
-            <div class="inspector-section">
-                <label>Optimization Results</label>
-                <div style="background: #1a1a1a; padding: 12px; border-radius: 4px; font-size: 12px;">
-                    <div style="margin-bottom: 8px;">
-                        <strong style="color: #4a9eff;">Final Score:</strong>
-                        <span style="color: #4a9eff;">${(node.data.validationScore * 100).toFixed(1)}%</span>
-                    </div>
-                    ${node.data.optimizedSignature && Object.keys(node.data.optimizedSignature).length > 0 ? `
-                        <div>
-                            <strong>Optimized Prompt:</strong>
-                            ${Object.entries(node.data.optimizedSignature).map(([name, instruction]) =>
-                                `<div style="margin-top: 4px; color: #888;">${name}: ${instruction}</div>`
-                            ).join('')}
-                        </div>
-                    ` : ''}
+        <div class="inspector-section">
+            <label>Results</label>
+            <div style="background: #1a1a1a; padding: 12px; border-radius: 4px; font-size: 12px;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: #4a9eff;">Final Score:</strong>
+                    <span style="color: #4a9eff;">${node.data.validationScore > 0 ? (node.data.validationScore * 100).toFixed(1) + '%' : ''}</span>
+                </div>
+                <div>
+                    <strong>Optimized Prompt:</strong>
+                    ${node.data.optimizedSignature && Object.keys(node.data.optimizedSignature).length > 0 ?
+                        Object.entries(node.data.optimizedSignature).map(([name, instruction]) =>
+                            `<div style="margin-top: 4px; color: #888;">${name}: ${instruction}</div>`
+                        ).join('') :
+                        '<div style="margin-top: 4px; color: #555;"></div>'
+                    }
                 </div>
             </div>
-        ` : ''}
+        </div>
 
         <!-- Action Buttons -->
         <div class="inspector-section">
