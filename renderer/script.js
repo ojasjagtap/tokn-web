@@ -2230,12 +2230,23 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
                 const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
                 if (normalized.ok) {
+                    // Store the result in the tool node
                     if (normalized.kind === 'bytes') {
+                        toolNode.data.lastOutput = `[Binary result: ${normalized.result.length} bytes]`;
                         addLog('info', `[${name}] Completed (${duration}s, ${normalized.result.length} bytes)`);
+                    } else if (normalized.kind === 'json') {
+                        toolNode.data.lastOutput = JSON.stringify(normalized.result, null, 2);
+                        addLog('info', `[${name}] Completed (${duration}s)`);
                     } else {
+                        toolNode.data.lastOutput = String(normalized.result);
                         addLog('info', `[${name}] Completed (${duration}s)`);
                     }
+                    // Update the node display to show the result
+                    updateNodeDisplay(toolNode.id);
                 } else {
+                    // Store the error in the tool node
+                    toolNode.data.lastOutput = `Error: ${normalized.error.message}`;
+                    updateNodeDisplay(toolNode.id);
                     addLog('error', `[${name}] ${normalized.error.message}`, toolNode.id);
                     hasToolError = true;
                     break;
@@ -2251,6 +2262,9 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
                 });
             } catch (error) {
                 const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                // Store the error in the tool node
+                toolNode.data.lastOutput = `Error: ${error.message}`;
+                updateNodeDisplay(toolNode.id);
                 addLog('error', `[${name}] ${error.message} (${duration}s)`, toolNode.id);
                 hasToolError = true;
                 break;

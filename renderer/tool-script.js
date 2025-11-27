@@ -82,6 +82,7 @@ function renderToolNode(node, connectedModels) {
         </div>
         <div class="node-body" style="display: ${node.collapsed ? 'none' : 'block'}">
             <div class="node-description">${node.data.description || 'No description'}</div>
+            <div class="node-output-viewer">${node.data.lastOutput || ''}</div>
         </div>
     `;
 }
@@ -177,6 +178,10 @@ function renderToolInspector(node, updateNodeDisplay, addLog) {
                 </span>
             </div>
             <textarea id="inspectorToolCode" class="inspector-textarea code-editor" rows="15">${node.data.implementation.code}</textarea>
+        </div>
+        <div class="inspector-section">
+            <label>Output</label>
+            <textarea id="inspectorToolOutput" class="inspector-textarea" rows="10" readonly>${node.data.lastOutput || ''}</textarea>
         </div>
         <div class="inspector-section">
             <button id="validateToolButton" class="validate-button">Validate</button>
