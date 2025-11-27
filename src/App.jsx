@@ -82,7 +82,7 @@ function App() {
                   DSPy
                 </div>
                 <div className="node-item" data-node-type="gepa-optimize" draggable="true">
-                  GEPA
+                  MLflow
                 </div>
               </div>
             </div>
