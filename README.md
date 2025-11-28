@@ -31,6 +31,7 @@ npm run dev
 - **Model Node** - Execute LLM inference with configurable parameters
 - **Tool Node** - Create custom JavaScript tools for LLMs to call
 - **DSPy Node** - Optimize prompts using the DSPy framework with automatic few-shot learning
+- **MLflow Node** - Optimize prompts using evolutionary algorithms with MLflow experiment tracking
 
 ### Multi-Provider Support
 - **OpenAI** - GPT-4, GPT-4o, GPT-3.5 models via API
@@ -50,6 +51,12 @@ npm run dev
 - Automatic few-shot example selection
 - Signature-based prompt compilation
 - Test dataset evaluation with real-time progress tracking
+
+### MLflow Integration
+- Evolutionary prompt optimization using MLflow's GEPA library
+- Multi-provider model ensemble for optimization
+- Experiment tracking and metrics visualization
+- Population-based search with configurable mutation and elite selection
 
 ### Workflow Management
 - Save and load workflows (.promptflow files)
@@ -112,11 +119,17 @@ tokn/
    - Set your prompt text and model parameters
    - Click "Run Flow" to execute
 
-3. **Optimize Prompts**
+3. **Optimize Prompts with DSPy**
    - Add a DSPy node
    - Define test cases and input/output signatures
    - Configure optimization parameters
    - Run to automatically improve your prompt with few-shot learning
+
+4. **Optimize Prompts with MLflow**
+   - Add an MLflow GEPA node
+   - Define test cases with expected outputs
+   - Configure evolutionary algorithm parameters (population size, generations, mutation rate)
+   - Run to optimize your prompt using population-based search with MLflow tracking
 
 ## Use Cases
 
