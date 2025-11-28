@@ -1502,13 +1502,14 @@ async function runFlow() {
 
     addLog('info', '[Flow] Run started');
 
-    // Reset all node statuses
+    // Reset all node statuses to idle before starting the flow
     state.nodes.forEach((node) => {
-        setNodeStatus(node.id, 'idle');
+        // Clear model outputs from previous runs (must be done before setting status)
         if (node.type === 'model') {
             node.data.output = '';
-            updateNodeDisplay(node.id);
         }
+        // Reset status to idle (this will update the display)
+        setNodeStatus(node.id, 'idle');
     });
 
     // Validate: check for empty prompts, missing models, and incomplete optimize nodes
