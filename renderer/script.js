@@ -1281,6 +1281,20 @@ function onCanvasMouseUp(e) {
 }
 
 function onCanvasWheel(e) {
+    // Check if the wheel event is happening inside a node-output-viewer
+    const outputViewer = e.target.closest('.node-output-viewer');
+
+    if (outputViewer) {
+        // Check if the output viewer is scrollable
+        const isScrollable = outputViewer.scrollHeight > outputViewer.clientHeight;
+
+        if (isScrollable) {
+            // If inside a scrollable output box, never zoom the grid
+            // Just let the browser handle the scroll (or do nothing at boundaries)
+            return;
+        }
+    }
+
     e.preventDefault();
     handleZoom(e.deltaY, e.clientX, e.clientY);
 }

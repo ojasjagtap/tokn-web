@@ -494,6 +494,12 @@ body.panning {
     padding: 8px;
     border-radius: 4px;
     border: 1px solid #333;
+    cursor: default;
+}
+
+/* Show a different cursor when hovering over scrollable content */
+.node-output-viewer:hover {
+    cursor: auto;
 }
 
 /* ============================================================================
