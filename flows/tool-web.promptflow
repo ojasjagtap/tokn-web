@@ -1,9 +1,9 @@
 {
   "version": 1,
   "viewport": {
-    "scale": 1.1399682555154556,
-    "tx": 156.54938143791995,
-    "ty": -17.936133294148476
+    "scale": 0.8857805000000005,
+    "tx": 161.87283735401246,
+    "ty": -32.516555323058085
   },
   "nodes": [
     {
@@ -12,9 +12,9 @@
       "x": 64,
       "y": 64,
       "width": 240,
-      "height": 65,
+      "height": 60,
       "status": "idle",
-      "zIndex": 32,
+      "zIndex": 38,
       "collapsed": true,
       "data": {
         "title": "Prompt",
@@ -26,11 +26,11 @@
       "id": "node-2",
       "type": "tool",
       "x": 64,
-      "y": 192,
+      "y": 128,
       "width": 240,
-      "height": 445,
+      "height": 440,
       "status": "idle",
-      "zIndex": 30,
+      "zIndex": 40,
       "collapsed": false,
       "data": {
         "name": "fetch_url",
@@ -61,9 +61,9 @@
       "x": 384,
       "y": 64,
       "width": 240,
-      "height": 410,
+      "height": 381,
       "status": "success",
-      "zIndex": 36,
+      "zIndex": 42,
       "collapsed": false,
       "data": {
         "title": "Model",
@@ -93,5 +93,5 @@
   ],
   "nodeIdCounter": 4,
   "edgeIdCounter": 3,
-  "maxZIndex": 37
+  "maxZIndex": 43
 }
