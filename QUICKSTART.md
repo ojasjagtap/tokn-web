@@ -263,7 +263,7 @@ npm run build
 
 1. Check this guide
 2. Review [README.md](README.md)
-3. Open an issue: https://github.com/ojasjagtap/tokn/issues
+3. Open an issue: https://github.com/ojasjagtap/tokn-web/issues
 
 ---
 

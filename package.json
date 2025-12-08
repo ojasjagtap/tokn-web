@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ojasjagtap/tokn.git"
+    "url": "git+https://github.com/ojasjagtap/tokn-web.git"
   },
   "keywords": ["prompt-engineering", "llm", "ai", "workflow", "web-app"],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ojasjagtap/tokn/issues"
+    "url": "https://github.com/ojasjagtap/tokn-web/issues"
   },
-  "homepage": "https://github.com/ojasjagtap/tokn#readme",
+  "homepage": "https://github.com/ojasjagtap/tokn-web#readme",
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
