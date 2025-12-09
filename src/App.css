@@ -146,6 +146,11 @@ body.panning {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
 }
 
 .left-panel .panel-header {
@@ -222,8 +227,11 @@ body.panning {
    ============================================================================ */
 
 .canvas-container {
-    flex: 1;
-    position: relative;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
     overflow: hidden;
     background: #1a1a1a;
     z-index: 1;
@@ -267,7 +275,7 @@ body.panning {
 .zoom-controls {
     position: absolute;
     top: 16px;
-    right: 16px;
+    right: 296px; /* 280px inspector width + 16px gap */
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -557,7 +565,11 @@ body.panning {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    position: relative;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
 }
 
 .right-panel::before {

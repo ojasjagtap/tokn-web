@@ -108,9 +108,9 @@ const state = {
 // ============================================================================
 
 const TILE_SIZE = 32;
-const MIN_SCALE = 0.5;
+const MIN_SCALE = 0.3;
 const MAX_SCALE = 2.0;
-const PAN_MARGIN = 1500;
+const PAN_MARGIN = 2500;
 const PIN_SNAP_RADIUS = 20;
 const NODE_WIDTH = 240;
 const NODE_MIN_HEIGHT = 120;
@@ -3132,17 +3132,16 @@ function stopAutoSave() {
 // ============================================================================
 
 /**
- * Update zoom controls position to stay 16px from canvas edge
- * The canvas container already ends at the inspector panel's left edge due to flex layout,
- * so we just need to keep zoom controls at 16px from the canvas container's right edge
+ * Update zoom controls position based on inspector panel width
  */
 function updateZoomControlsPosition() {
     const zoomControls = document.getElementById('zoomControls');
+    const rightPanel = document.getElementById('rightPanel');
 
-    if (zoomControls) {
-        // Position zoom controls 16px from the canvas container's right edge
-        // (which is at the inspector panel's left edge)
-        zoomControls.style.right = '16px';
+    if (zoomControls && rightPanel) {
+        const panelWidth = rightPanel.offsetWidth;
+        // Position zoom controls 16px to the left of the inspector panel
+        zoomControls.style.right = `${panelWidth + 16}px`;
     }
 }
 
