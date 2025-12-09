@@ -15,8 +15,8 @@ const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add('fade-in-up');
-        } else {
-            entry.target.classList.remove('fade-in-up');
+        // } else {
+        //     entry.target.classList.remove('fade-in-up');
         }
     });
 }, observerOptions);
