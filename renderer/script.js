@@ -1064,23 +1064,16 @@ function renderGrid() {
     const offsetX = tx % screenTileSize;
     const offsetY = ty % screenTileSize;
 
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 0.5;
+    // Draw dots at grid intersections
+    ctx.fillStyle = '#333';
+    const dotRadius = Math.max(1, scale * 1.5);
 
-    // Vertical lines
     for (let x = offsetX; x < width; x += screenTileSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-    }
-
-    // Horizontal lines
-    for (let y = offsetY; y < height; y += screenTileSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
+        for (let y = offsetY; y < height; y += screenTileSize) {
+            ctx.beginPath();
+            ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 }
 
