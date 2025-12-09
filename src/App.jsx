@@ -94,6 +94,12 @@ function App() {
             <canvas id="gridCanvas" className="grid-canvas"></canvas>
             <svg id="edgesSvg" className="edges-svg"></svg>
             <div id="nodesLayer" className="nodes-layer"></div>
+
+            {/* Zoom Controls */}
+            <div id="zoomControls" className="zoom-controls">
+              <button id="zoomInButton" className="zoom-button" title="Zoom In">+</button>
+              <button id="zoomOutButton" className="zoom-button" title="Zoom Out">−</button>
+            </div>
           </div>
 
           {/* Right Panel: Inspector */}

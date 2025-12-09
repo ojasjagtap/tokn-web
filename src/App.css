@@ -261,6 +261,48 @@ body.panning {
 }
 
 /* ============================================================================
+   ZOOM CONTROLS
+   ============================================================================ */
+
+.zoom-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1000;
+    pointer-events: all;
+}
+
+.zoom-button {
+    width: 36px;
+    height: 36px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s, transform 0.1s;
+    user-select: none;
+}
+
+.zoom-button:hover {
+    background: #333;
+    border-color: #4a90e2;
+}
+
+.zoom-button:active {
+    transform: scale(0.95);
+    background: #3a3a3a;
+}
+
+/* ============================================================================
    FLOW NODES
    ============================================================================ */
 

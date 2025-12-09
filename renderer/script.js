@@ -1103,6 +1103,34 @@ function handleZoom(deltaY, clientX, clientY) {
     renderAll();
 }
 
+/**
+ * Zoom in or out from center of viewport
+ * @param {number} direction - Positive for zoom in, negative for zoom out
+ */
+function zoomFromCenter(direction) {
+    const container = document.getElementById('canvasContainer');
+    const rect = container.getBoundingClientRect();
+
+    // Zoom from the center of the viewport
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const worldBefore = screenToWorld(centerX, centerY);
+
+    const zoomFactor = direction > 0 ? 1.1 : 0.9;
+    const newScale = clamp(state.viewport.scale * zoomFactor, MIN_SCALE, MAX_SCALE);
+
+    state.viewport.scale = newScale;
+
+    const worldAfter = screenToWorld(centerX, centerY);
+
+    state.viewport.tx += (worldAfter.x - worldBefore.x) * state.viewport.scale;
+    state.viewport.ty += (worldAfter.y - worldBefore.y) * state.viewport.scale;
+
+    clampPanning();
+    renderAll();
+}
+
 function clampPanning() {
     if (state.nodes.size === 0) {
         state.viewport.tx = 0;
@@ -2998,6 +3026,10 @@ function stopAutoSave() {
     document.getElementById('runButton').addEventListener('click', runFlow);
     document.getElementById('cancelButton').addEventListener('click', cancelRun);
 
+    // Zoom buttons
+    document.getElementById('zoomInButton').addEventListener('click', () => zoomFromCenter(1));
+    document.getElementById('zoomOutButton').addEventListener('click', () => zoomFromCenter(-1));
+
     // File operation buttons
     document.getElementById('newButton').addEventListener('click', newWorkflow);
     document.getElementById('openButton').addEventListener('click', openWorkflow);
@@ -3068,6 +3100,9 @@ function stopAutoSave() {
     // Logs panel resize
     setupLogsResize();
 
+    // Initialize zoom controls position
+    updateZoomControlsPosition();
+
     // Initial render
     renderGrid();
     updateInspector();
@@ -3078,6 +3113,7 @@ function stopAutoSave() {
     window.addEventListener('resize', () => {
         renderAll();
         truncateLongTokensInLogs();
+        updateZoomControlsPosition();
     });
 
     // Check for auto-save recovery
@@ -3090,6 +3126,25 @@ function stopAutoSave() {
         console.error('[Script] Stack trace:', error.stack);
     }
 })(); // Invoke the IIFE immediately
+
+// ============================================================================
+// ZOOM CONTROLS POSITIONING
+// ============================================================================
+
+/**
+ * Update zoom controls position to stay 16px from canvas edge
+ * The canvas container already ends at the inspector panel's left edge due to flex layout,
+ * so we just need to keep zoom controls at 16px from the canvas container's right edge
+ */
+function updateZoomControlsPosition() {
+    const zoomControls = document.getElementById('zoomControls');
+
+    if (zoomControls) {
+        // Position zoom controls 16px from the canvas container's right edge
+        // (which is at the inspector panel's left edge)
+        zoomControls.style.right = '16px';
+    }
+}
 
 // ============================================================================
 // INSPECTOR RESIZE
@@ -3134,6 +3189,9 @@ function setupInspectorResize() {
         if (logsPanel) {
             logsPanel.style.right = `${clampedWidth}px`;
         }
+
+        // Update zoom controls position
+        updateZoomControlsPosition();
 
         // Re-truncate log messages to fit the new panel width
         truncateLongTokensInLogs();
