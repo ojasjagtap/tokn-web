@@ -147,7 +147,7 @@ section {
 
 .btn-primary {
     display: inline-block;
-    padding: 10px 24px;
+    padding: 5px 12px;
     background: var(--accent-blue);
     color: white;
     text-decoration: none;
@@ -299,6 +299,8 @@ section {
     border-radius: 12px;
     padding: 32px;
     transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(30px);
 }
 
 .feature-card:hover {
@@ -354,6 +356,8 @@ section {
     padding: 40px 32px;
     text-align: center;
     transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(30px);
 }
 
 .integration-item:hover {
@@ -395,6 +399,8 @@ section {
 .use-case {
     position: relative;
     padding-left: 24px;
+    opacity: 0;
+    transform: translateY(30px);
 }
 
 .use-case::before {
@@ -523,6 +529,8 @@ section {
 
 .fade-in-up {
     animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 1;
+    transform: translateY(0);
 }
 
 @keyframes slideLeft {
