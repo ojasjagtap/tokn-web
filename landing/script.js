@@ -39,28 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// NAVIGATION SCROLL EFFECT
-// ============================================================================
-
-let lastScroll = 0;
-const nav = document.querySelector('.nav');
-
-window.addEventListener('scroll', () => {
-    const currentScroll = window.pageYOffset;
-
-    // Add shadow on scroll
-    if (currentScroll > 50) {
-        nav.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.5)';
-    } else {
-        nav.style.boxShadow = 'none';
-    }
-
-    lastScroll = currentScroll;
-});
-
-// ============================================================================
 // SMOOTH SCROLL FOR ANCHOR LINKS
 // ============================================================================
+
+const nav = document.querySelector('.nav');
 
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
