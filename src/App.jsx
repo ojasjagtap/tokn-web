@@ -31,7 +31,7 @@ function App() {
       {/* Top Action Bar */}
       <div id="topBar" className="top-bar">
         <div className="top-bar-left">
-          <img src="/assets/logo-white.png" alt="tokn" className="app-logo" />
+          <img src="/logo-white.png" alt="tokn" className="app-logo" />
           <h1 className="app-title">tokn</h1>
         </div>
         <div className="top-bar-right">
