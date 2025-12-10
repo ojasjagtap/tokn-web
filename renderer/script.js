@@ -1317,7 +1317,21 @@ function onCanvasWheel(e) {
     }
 
     e.preventDefault();
-    handleZoom(e.deltaY, e.clientX, e.clientY);
+
+    // Detect pinch gesture vs scroll:
+    // - Pinch gesture (zoom): comes through with ctrlKey === true on trackpads
+    // - Two-finger scroll (pan): comes through with ctrlKey === false
+    if (e.ctrlKey) {
+        // Pinch gesture - zoom in/out
+        handleZoom(e.deltaY, e.clientX, e.clientY);
+    } else {
+        // Two-finger scroll - pan the canvas
+        state.viewport.tx -= e.deltaX;
+        state.viewport.ty -= e.deltaY;
+
+        clampPanning();
+        renderAll();
+    }
 }
 
 function onNodeMouseDown(e) {
