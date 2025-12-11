@@ -322,6 +322,7 @@ body.panning {
     pointer-events: all;
     cursor: move;
     transition: border-color 0.2s;
+    transform-origin: top left;
 }
 
 .flow-node.node-selected {
