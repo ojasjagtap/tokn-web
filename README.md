@@ -69,6 +69,52 @@ npm run dev
 - Sandboxed tool execution in Web Workers
 - Optional backend for DSPy/GEPA (API keys transmitted over HTTPS only)
 
+## 🐳 Docker Deployment
+
+tokn can be easily deployed using Docker and Docker Compose for both development and production environments.
+
+### Quick Start with Docker
+
+**Development mode (with hot reloading):**
+```bash
+# Frontend only (recommended for most users)
+docker-compose --profile frontend up
+# or: make dev-frontend
+
+# Full stack (if using DSPy/GEPA optimization)
+docker-compose --profile full up
+# or: make dev
+
+# Access the app at http://localhost:3000
+```
+
+**Production mode:**
+```bash
+# Frontend only
+docker-compose -f docker-compose.prod.yml --profile frontend up -d
+# or: make prod-frontend
+
+# Full stack (if using optimization)
+docker-compose -f docker-compose.prod.yml --profile full up -d
+# or: make prod
+
+# Access the app at http://localhost:80
+```
+
+### Services
+
+The Docker setup includes:
+
+- **Frontend** - React app with Vite (dev) or Nginx (prod) on port 3000/80
+- **Backend** (optional) - Python Flask API for DSPy/GEPA optimization on port 5000
+
+**Note:** Backend is only needed if you're using the DSPy or GEPA optimization features. Most users can run just the frontend!
+
+### Documentation
+
+- **[DOCKER.md](DOCKER.md)** - Complete Docker usage guide
+- **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Deployment to production
+
 ## File Structure
 
 ```

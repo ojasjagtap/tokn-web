@@ -57,9 +57,9 @@ async function executeGepaOptimization(config, onProgress, signal = null) {
         };
 
         // Notify start
-        if (onProgress) {
-            onProgress('Connecting to backend API...', null);
-        }
+        // if (onProgress) {
+        //     onProgress('Connecting to backend API...', null);
+        // }
 
         // Make API request
         const controller = new AbortController();

@@ -8,6 +8,38 @@ tokn consists of two parts:
 1. **Frontend** - React web app (static files)
 2. **Backend** - Python Flask API (optional, for DSPy/GEPA features)
 
+## Deployment Options
+
+### Option 1: Docker (Recommended)
+
+Docker provides the easiest and most consistent deployment experience across all platforms.
+
+**Quick Deploy:**
+```bash
+# Clone repository
+git clone https://github.com/ojasjagtap/tokn-web.git
+cd tokn-web
+
+# Set up environment
+cp backend/.env.example backend/.env
+
+# Production deployment
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+**Comprehensive Docker Guide**: See [Docker Deployment Guide (docs/DOCKER.md)](DOCKER.md) for:
+- Development and production setup
+- Cloud platform deployment (AWS, GCP, Azure)
+- CI/CD integration
+- Scaling and monitoring
+- Troubleshooting
+
+**Quick Docker Reference**: See [DOCKER_QUICKSTART.md](../DOCKER_QUICKSTART.md)
+
+### Option 2: Traditional Deployment
+
+Deploy frontend and backend separately to various hosting platforms (Vercel, Heroku, etc.)
+
 ## Frontend Deployment
 
 The frontend is a static React app that can be deployed to any static hosting service.
@@ -201,25 +233,35 @@ railway up
 
 4. Set environment variables in Railway dashboard
 
-#### Option C: Docker on any platform
+#### Option C: Docker (Recommended)
 
-1. Build image:
+See the [Docker Deployment Guide (docs/DOCKER.md)](DOCKER.md) for comprehensive Docker deployment instructions.
+
+**Quick production deployment:**
 ```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+**Deploy individual services:**
+```bash
+# Build backend image
 docker build -t tokn-backend backend/
-```
 
-2. Run locally to test:
-```bash
+# Run locally to test
 docker run -p 5000:5000 -e CORS_ORIGINS=* tokn-backend
-```
 
-3. Push to Docker Hub:
-```bash
+# Push to Docker Hub
 docker tag tokn-backend yourusername/tokn-backend
 docker push yourusername/tokn-backend
 ```
 
-4. Deploy to your platform (AWS ECS, Google Cloud Run, etc.)
+Deploy to cloud platforms:
+- AWS: ECS, EKS, App Runner
+- GCP: Cloud Run, GKE
+- Azure: Container Instances, AKS
+- DigitalOcean: App Platform
+
+See [Docker Guide](DOCKER.md) for platform-specific instructions.
 
 #### Option D: AWS Lambda (Serverless)
 

@@ -1,0 +1,73 @@
+services:
+  # Frontend - Nginx production server
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: tokn-frontend-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - tokn-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.tokn.service=frontend"
+      - "com.tokn.environment=production"
+    profiles:
+      - frontend
+      - full
+
+  # Backend - Python Flask API (optional - only needed for DSPy/GEPA optimization)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: tokn-backend-prod
+    expose:
+      - "5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_DEBUG=0
+      - PORT=5000
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://yourdomain.com}
+    env_file:
+      - ./backend/.env
+    networks:
+      - tokn-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "com.tokn.service=backend"
+      - "com.tokn.environment=production"
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    profiles:
+      - backend
+      - full
+
+networks:
+  tokn-network:
+    driver: bridge
