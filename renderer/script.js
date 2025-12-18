@@ -164,6 +164,22 @@ function snapToGrid(value) {
 // LOGGING
 // ============================================================================
 
+/**
+ * Create a properly tagged log message, ensuring only one tag appears
+ * Removes any existing tag from the message and applies the specified tag
+ * @param {string} tag - The tag to apply (e.g., "DSPy", "GEPA", "Flow")
+ * @param {string} message - The raw log message (may or may not have an existing tag)
+ * @returns {string} - The message with exactly one tag: [tag] message
+ */
+function createTaggedMessage(tag, message) {
+    // Remove any existing tag pattern from the start of the message
+    // Pattern matches: optional whitespace + [anything] + optional whitespace
+    const cleanMessage = message.replace(/^\s*\[([^\]]+)\]\s*/, '');
+
+    // Return message with the specified tag
+    return `[${tag}] ${cleanMessage}`;
+}
+
 function addLog(level, message, nodeId = null) {
     const log = {
         timestamp: formatTimestamp(),

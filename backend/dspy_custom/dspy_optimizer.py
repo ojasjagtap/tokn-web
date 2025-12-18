@@ -552,8 +552,8 @@ def optimize_prompt(config: Dict[str, Any], progress_callback: Optional[Callable
             import dspy
         except ImportError as e:
             error_details = traceback.format_exc()
-            print(f"[DSPy Import Error] {str(e)}")
-            print(f"[DSPy Import Error Traceback] {error_details}")
+            print(f"DSPy Import Error: {str(e)}")
+            print(f"DSPy Import Error Traceback: {error_details}")
             return {
                 'type': 'error',
                 'message': f'DSPy library not found: {str(e)}',

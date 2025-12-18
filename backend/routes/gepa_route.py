@@ -103,7 +103,7 @@ def optimize_gepa():
         }), 500
 
     except Exception as e:
-        print(f"[GEPA Error] {str(e)}")
+        print(f"GEPA Error: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
