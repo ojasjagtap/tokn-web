@@ -331,7 +331,7 @@ function truncateLongTokensInLogs() {
 // NODE MANAGEMENT
 // ============================================================================
 
-function createNode(type, worldX, worldY) {
+async function createNode(type, worldX, worldY) {
     const id = generateId('node');
     const node = {
         id,
@@ -353,9 +353,20 @@ function createNode(type, worldX, worldY) {
             userPrompt: ''
         };
     } else if (type === 'model') {
+        // Find first configured provider, or fall back to first provider
+        let defaultProvider = 'openai'; // fallback to first provider
+        const providers = providerRegistry.getProviders();
+        for (const provider of providers) {
+            const isConfigured = await providerRegistry.isProviderConfigured(provider.id);
+            if (isConfigured) {
+                defaultProvider = provider.id;
+                break;
+            }
+        }
+
         node.data = {
             title: 'Model',
-            provider: 'openai', // default to openai
+            provider: defaultProvider,
             model: state.availableModels[0] || '',
             temperature: 0.7,
             maxTokens: 512,
@@ -1446,7 +1457,7 @@ function onPinMouseDown(e) {
     renderEdges();
 }
 
-function onCanvasDrop(e) {
+async function onCanvasDrop(e) {
     e.preventDefault();
     const nodeType = e.dataTransfer.getData('nodeType');
     if (!nodeType) return;
@@ -1457,7 +1468,7 @@ function onCanvasDrop(e) {
     const y = e.clientY - rect.top;
 
     const world = screenToWorld(x, y);
-    const nodeId = createNode(nodeType, world.x, world.y);
+    const nodeId = await createNode(nodeType, world.x, world.y);
 
     // Select the newly created node
     state.selectedNodeId = nodeId;
