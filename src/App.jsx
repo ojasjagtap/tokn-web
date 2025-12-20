@@ -80,10 +80,10 @@ function App() {
               <div className="node-category">
                 <div className="category-title">Optimization</div>
                 <div className="node-item" data-node-type="dspy-optimize" draggable="true">
-                  DSPy
+                  MIPROv2
                 </div>
                 <div className="node-item" data-node-type="gepa-optimize" draggable="true">
-                  MLflow
+                  GEPA
                 </div>
               </div>
             </div>

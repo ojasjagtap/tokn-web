@@ -19,7 +19,7 @@ import { executeDSPyOptimization, checkDSPyEnvironment, validateDSPyConfig } fro
  */
 function createDSPyOptimizeNodeData() {
     return {
-        title: 'DSPy',
+        title: 'MIPROv2',
 
         // Optimizer Configuration
         optimizer: 'MIPROv2',  // 'MIPROv2' (instruction optimization)

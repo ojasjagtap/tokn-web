@@ -20,7 +20,7 @@ import { providerRegistry } from '../src/services/providerRegistry.js';
  */
 function createGepaOptimizeNodeData() {
     return {
-        title: 'MLflow',
+        title: 'GEPA',
 
         // Optimizer Configuration
         maxMetricCalls: 300,              // Optimization budget (iterations)
