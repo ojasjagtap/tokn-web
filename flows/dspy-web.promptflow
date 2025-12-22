@@ -1,9 +1,9 @@
 {
   "version": 1,
   "viewport": {
-    "scale": 0.9549688148550008,
-    "tx": 339.29001686682795,
-    "ty": 271.2456685394231
+    "scale": 1.2710634925720063,
+    "tx": 434.53101244974795,
+    "ty": 279.72898482597213
   },
   "nodes": [
     {
@@ -12,7 +12,7 @@
       "x": -64,
       "y": -192,
       "width": 240,
-      "height": 272,
+      "height": 273,
       "status": "idle",
       "zIndex": 230,
       "collapsed": false,
@@ -28,7 +28,7 @@
       "x": 256,
       "y": 32,
       "width": 240,
-      "height": 329,
+      "height": 333,
       "status": "success",
       "zIndex": 236,
       "collapsed": false,
@@ -47,12 +47,12 @@
       "x": 576,
       "y": -64,
       "width": 240,
-      "height": 250,
+      "height": 251,
       "status": "success",
-      "zIndex": 244,
+      "zIndex": 252,
       "collapsed": false,
       "data": {
-        "title": "DSPy",
+        "title": "MIPROv2",
         "optimizer": "MIPROv2",
         "optimizationMode": "light",
         "programType": "predict",
@@ -203,5 +203,5 @@
   ],
   "nodeIdCounter": 9,
   "edgeIdCounter": 4,
-  "maxZIndex": 245
+  "maxZIndex": 253
 }
