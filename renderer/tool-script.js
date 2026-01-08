@@ -3,6 +3,8 @@
  * Handles Tool node creation, rendering, validation, and registration
  */
 
+import { createTaggedMessage } from './script.js';
+
 /**
  * Default web-safe HTTP fetcher implementation
  * Note: Tools run in sandboxed Web Workers with no Node.js access

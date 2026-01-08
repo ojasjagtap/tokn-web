@@ -171,7 +171,7 @@ function snapToGrid(value) {
  * @param {string} message - The raw log message (may or may not have an existing tag)
  * @returns {string} - The message with exactly one tag: [tag] message
  */
-function createTaggedMessage(tag, message) {
+export function createTaggedMessage(tag, message) {
     // Remove any existing tag pattern from the start of the message
     // Pattern matches: optional whitespace + [anything] + optional whitespace
     const cleanMessage = message.replace(/^\s*\[([^\]]+)\]\s*/, '');
@@ -180,7 +180,7 @@ function createTaggedMessage(tag, message) {
     return `[${tag}] ${cleanMessage}`;
 }
 
-function addLog(level, message, nodeId = null) {
+export function addLog(level, message, nodeId = null) {
     const log = {
         timestamp: formatTimestamp(),
         level,

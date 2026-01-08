@@ -6,6 +6,7 @@
 
 import { executeGepaOptimization, checkGepaEnvironment, validateGepaConfig } from './gepa-worker.js';
 import { providerRegistry } from '../src/services/providerRegistry.js';
+import { createTaggedMessage, addLog } from './script.js';
 // Note: path and os modules are Node.js-specific and not available in browser
 // These are commented out for web version - backend functionality is disabled
 // const path = require('path');

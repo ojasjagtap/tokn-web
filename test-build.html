@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Build Test</title>
+</head>
+<body>
+    <h1>Testing Production Build</h1>
+    <div id="results"></div>
+    <script type="module">
+        const results = document.getElementById('results');
+
+        async function testImports() {
+            try {
+                results.innerHTML += '<p>Testing renderer/script.js import...</p>';
+                const module = await import('/renderer/script.js');
+                results.innerHTML += '<p style="color: green;">✓ renderer/script.js loaded successfully</p>';
+            } catch (error) {
+                results.innerHTML += `<p style="color: red;">✗ Error loading renderer/script.js: ${error.message}</p>`;
+                console.error('Import error:', error);
+            }
+        }
+
+        testImports();
+    </script>
+</body>
+</html>
