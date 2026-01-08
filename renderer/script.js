@@ -2618,13 +2618,13 @@ function markWorkflowClean() {
  * Update window title to show file name and dirty status
  */
 function updateWindowTitle() {
-    let title = 'tokn';
+    let title = 'Tokn';
     if (state.currentFilePath) {
         // Extract filename from path (works for both file paths and simple names)
         const fileName = state.currentFilePath.replace(/\.toknflow$/, '');
-        title = `${fileName}${state.isDirty ? ' *' : ''} - tokn`;
+        title = `${fileName}${state.isDirty ? ' *' : ''} - Tokn`;
     } else if (state.isDirty) {
-        title = 'Untitled * - tokn';
+        title = 'Untitled * - Tokn';
     }
     document.title = title;
 }

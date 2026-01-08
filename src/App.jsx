@@ -38,8 +38,8 @@ function App() {
       {/* Top Action Bar */}
       <div id="topBar" className="top-bar">
         <div className="top-bar-left">
-          <img src="/logo-white.png" alt="tokn" className="app-logo" />
-          <h1 className="app-title">tokn</h1>
+          <img src="/logo-white.png" alt="Tokn" className="app-logo" />
+          <h1 className="app-title">Tokn</h1>
         </div>
         <div className="top-bar-right">
           <button id="newButton" className="action-button" title="New Workflow (Ctrl+N)">New</button>
