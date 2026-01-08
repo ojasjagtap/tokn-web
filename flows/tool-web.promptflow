@@ -1,21 +1,21 @@
 {
   "version": 1,
   "viewport": {
-    "scale": 0.8857805000000005,
-    "tx": 411.87283735401246,
-    "ty": 17.483444676941915
+    "scale": 1.167184107045001,
+    "tx": 673.0912690530085,
+    "ty": -28.71911778779102
   },
   "nodes": [
     {
       "id": "node-1",
       "type": "prompt",
-      "x": 64,
+      "x": -192,
       "y": 64,
       "width": 240,
-      "height": 60,
+      "height": 373,
       "status": "idle",
-      "zIndex": 38,
-      "collapsed": true,
+      "zIndex": 45,
+      "collapsed": false,
       "data": {
         "title": "Prompt",
         "systemPrompt": "You are a helpful assistant that can fetch data from URLs. When asked about weather or API data, use the fetch_url tool to retrieve information from the provided URL.",
@@ -28,7 +28,7 @@
       "x": 64,
       "y": 128,
       "width": 240,
-      "height": 440,
+      "height": 441,
       "status": "idle",
       "zIndex": 40,
       "collapsed": false,
@@ -61,7 +61,7 @@
       "x": 384,
       "y": 64,
       "width": 240,
-      "height": 381,
+      "height": 385,
       "status": "success",
       "zIndex": 42,
       "collapsed": false,
@@ -93,5 +93,5 @@
   ],
   "nodeIdCounter": 4,
   "edgeIdCounter": 3,
-  "maxZIndex": 43
+  "maxZIndex": 46
 }

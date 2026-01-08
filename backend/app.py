@@ -13,12 +13,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 
-# Configure CORS - Update origins for production
-CORS(app, origins=[
-    "http://localhost:3000",  # Vite dev server
-    "http://localhost:5173",  # Alternative Vite port
-    "*"  # Allow all for development - RESTRICT IN PRODUCTION
-])
+# Configure CORS - Reads from environment variable for production
+cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173,*')
+origins_list = [origin.strip() for origin in cors_origins.split(',')]
+CORS(app, origins=origins_list)
 
 # Import route handlers
 from routes.health_route import health_bp
