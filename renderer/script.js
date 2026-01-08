@@ -2621,7 +2621,7 @@ function updateWindowTitle() {
     let title = 'tokn';
     if (state.currentFilePath) {
         // Extract filename from path (works for both file paths and simple names)
-        const fileName = state.currentFilePath.replace(/\.promptflow$/, '');
+        const fileName = state.currentFilePath.replace(/\.toknflow$/, '');
         title = `${fileName}${state.isDirty ? ' *' : ''} - tokn`;
     } else if (state.isDirty) {
         title = 'Untitled * - tokn';

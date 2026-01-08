@@ -59,7 +59,7 @@ npm run dev
 - Population-based search with configurable mutation and elite selection
 
 ### Workflow Management
-- Save and load workflows (.promptflow files)
+- Save and load workflows (.toknflow files)
 - Auto-save functionality with recovery
 - Keyboard shortcuts (Ctrl+S, Ctrl+O, Ctrl+N)
 

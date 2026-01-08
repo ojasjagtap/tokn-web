@@ -37,10 +37,10 @@ export async function saveWorkflow(workflowData, saveAs = false) {
         // Show save dialog if no handle or user requested "Save As"
         if (!fileHandle || saveAs) {
             fileHandle = await window.showSaveFilePicker({
-                suggestedName: currentFileName || 'workflow.promptflow',
+                suggestedName: currentFileName || 'workflow.toknflow',
                 types: [{
-                    description: 'Prompt Flow Files',
-                    accept: { 'application/json': ['.promptflow'] }
+                    description: 'Tokn Flow Files',
+                    accept: { 'application/json': ['.toknflow'] }
                 }]
             });
 
@@ -93,8 +93,8 @@ export async function openWorkflow() {
         // Show file picker
         const [fileHandle] = await window.showOpenFilePicker({
             types: [{
-                description: 'Prompt Flow Files',
-                accept: { 'application/json': ['.promptflow'] }
+                description: 'Tokn Flow Files',
+                accept: { 'application/json': ['.toknflow'] }
             }],
             multiple: false
         });
@@ -154,7 +154,7 @@ export function clearCurrentFile() {
  * @param {Object} workflowData - Workflow data to download
  * @param {string} fileName - Suggested file name
  */
-export function downloadWorkflow(workflowData, fileName = 'workflow.promptflow') {
+export function downloadWorkflow(workflowData, fileName = 'workflow.toknflow') {
     const jsonString = JSON.stringify(workflowData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -177,7 +177,7 @@ export function uploadWorkflow() {
     return new Promise((resolve) => {
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.promptflow,application/json';
+        input.accept = '.toknflow,application/json';
 
         input.onchange = async (e) => {
             const file = e.target.files[0];
