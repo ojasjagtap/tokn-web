@@ -4,8 +4,9 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: "cd backend && pip install -r requirements.txt"
-    startCommand: "cd backend && python app.py"
+    rootDir: backend
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python app.py"
     healthCheckPath: /api/health
     envVars:
       - key: PORT
