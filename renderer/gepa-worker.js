@@ -5,7 +5,11 @@
  */
 
 // Backend API configuration (shared with dspy-worker)
-let backendApiUrl = window.location.origin + '/api';
+// Use environment variable if set, otherwise default to /api on same origin
+const defaultBackendUrl = import.meta.env.VITE_BACKEND_URL
+    ? `${import.meta.env.VITE_BACKEND_URL}/api`
+    : `${window.location.origin}/api`;
+let backendApiUrl = defaultBackendUrl;
 
 /**
  * Configure backend API URL
