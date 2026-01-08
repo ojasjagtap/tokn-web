@@ -148,7 +148,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-DOCKER_DEPLOYMENT.md
 docs/DEPLOYMENT.md
 docker/README.md
 DEPLOYMENT.md
