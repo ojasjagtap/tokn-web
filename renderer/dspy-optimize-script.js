@@ -5,7 +5,7 @@
  */
 
 import { executeDSPyOptimization, checkDSPyEnvironment, validateDSPyConfig } from './dspy-worker.js';
-import { createTaggedMessage, addLog } from './script.js';
+import { createTaggedMessage } from './log-utils.js';
 // Note: path and os modules are Node.js-specific and not available in browser
 // These are commented out for web version - backend functionality is disabled
 // const path = require('path');

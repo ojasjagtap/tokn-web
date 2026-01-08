@@ -6,6 +6,7 @@
 // Import dependencies
 import fileOperations from '../src/services/fileOperations.js';
 import { providerRegistry } from '../src/services/providerRegistry.js';
+import { createTaggedMessage as createTaggedMessageUtil, formatTimestamp } from './log-utils.js';
 import {
     createToolNodeData,
     renderToolNode,
@@ -146,11 +147,6 @@ function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
-function formatTimestamp() {
-    const now = new Date();
-    return now.toLocaleTimeString('en-US', { hour12: false });
-}
-
 /**
  * Snap a coordinate to the nearest grid line
  * @param {number} value - The coordinate value to snap
@@ -166,18 +162,10 @@ function snapToGrid(value) {
 
 /**
  * Create a properly tagged log message, ensuring only one tag appears
- * Removes any existing tag from the message and applies the specified tag
- * @param {string} tag - The tag to apply (e.g., "DSPy", "GEPA", "Flow")
- * @param {string} message - The raw log message (may or may not have an existing tag)
- * @returns {string} - The message with exactly one tag: [tag] message
+ * Re-exported from log-utils.js to avoid circular dependencies
  */
 export function createTaggedMessage(tag, message) {
-    // Remove any existing tag pattern from the start of the message
-    // Pattern matches: optional whitespace + [anything] + optional whitespace
-    const cleanMessage = message.replace(/^\s*\[([^\]]+)\]\s*/, '');
-
-    // Return message with the specified tag
-    return `[${tag}] ${cleanMessage}`;
+    return createTaggedMessageUtil(tag, message);
 }
 
 export function addLog(level, message, nodeId = null) {

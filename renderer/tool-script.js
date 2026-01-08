@@ -3,7 +3,7 @@
  * Handles Tool node creation, rendering, validation, and registration
  */
 
-import { createTaggedMessage } from './script.js';
+import { createTaggedMessage } from './log-utils.js';
 
 /**
  * Default web-safe HTTP fetcher implementation
