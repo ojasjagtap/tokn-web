@@ -8,7 +8,23 @@ Get your Tokn app deployed in 5 minutes!
 - Vercel account (sign up free at [vercel.com](https://vercel.com))
 - Your code pushed to GitHub
 
-## Step 1: Push to GitHub
+## Step 1: Test Build Locally (Recommended)
+
+Before deploying, test the build locally to catch any issues:
+
+```bash
+npm run build
+npm run preview
+```
+
+Visit http://localhost:4173 and verify:
+- Landing page loads with all features and developer sections visible
+- Clicking "Launch" opens the IDE at `/app.html`
+- No console errors
+
+Press Ctrl+C to stop the preview.
+
+## Step 2: Push to GitHub
 
 ```bash
 git add .
@@ -16,7 +32,7 @@ git commit -m "Ready for deployment"
 git push origin main
 ```
 
-## Step 2: Deploy Frontend to Vercel
+## Step 3: Deploy Frontend to Vercel
 
 1. Go to [vercel.com](https://vercel.com) and sign in
 2. Click **"Add New Project"**
@@ -37,7 +53,7 @@ git push origin main
 
 Only follow these steps if you need DSPy or GEPA optimization features.
 
-### Step 3: Deploy Backend to Render
+### Step 4: Deploy Backend to Render
 
 1. Go to [render.com](https://render.com) and sign in
 2. Click **"New +"** → **"Web Service"**
@@ -51,7 +67,7 @@ Only follow these steps if you need DSPy or GEPA optimization features.
 6. Click **"Create Web Service"**
 7. ✅ Copy your backend URL: `https://tokn-backend.onrender.com`
 
-### Step 4: Connect Frontend to Backend
+### Step 5: Connect Frontend to Backend
 
 1. Go to Vercel Dashboard → Your Project → **Settings** → **Environment Variables**
 2. Add new variable:
@@ -83,9 +99,19 @@ Only follow these steps if you need DSPy or GEPA optimization features.
 
 ## Troubleshooting
 
+**Landing page missing features/developers sections?**
+- The build process now automatically copies landing assets
+- Ensure you're using the latest `vite.config.js` with the `copyLandingPlugin`
+- Test locally with `npm run build && npm run preview` before deploying
+
+**404 error when clicking "Launch"?**
+- Fixed! The app.html is now properly built and included
+- Vercel configuration updated to handle both landing page and IDE
+
 **Build fails on Vercel?**
 - Check build logs in Vercel dashboard
 - Ensure Node.js 18+ is available
+- Verify all dependencies are in package.json
 
 **Frontend can't reach backend?**
 - Verify `VITE_BACKEND_URL` is set correctly
