@@ -5,11 +5,16 @@
  */
 
 // Backend API configuration
-// Use environment variable if set, otherwise default to /api on same origin
-const defaultBackendUrl = import.meta.env.VITE_BACKEND_URL
-    ? `${import.meta.env.VITE_BACKEND_URL}/api`
-    : `${window.location.origin}/api`;
-let backendApiUrl = defaultBackendUrl;
+// Check for backend URL in window (set by main app) or default to same origin
+const getDefaultBackendUrl = () => {
+    // Check if backend URL is set globally by the app
+    if (window.__TOKN_BACKEND_URL) {
+        return `${window.__TOKN_BACKEND_URL}/api`;
+    }
+    // Default to same origin (works with Vite proxy in dev)
+    return `${window.location.origin}/api`;
+};
+let backendApiUrl = getDefaultBackendUrl();
 
 /**
  * Configure backend API URL

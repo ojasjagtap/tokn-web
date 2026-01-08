@@ -2,6 +2,13 @@ import { useEffect } from 'react'
 
 function App() {
   useEffect(() => {
+    // Set backend URL for workers (if environment variable is set)
+    // This needs to be set before loading renderer/script.js
+    const backendUrl = import.meta.env.VITE_BACKEND_URL
+    if (backendUrl) {
+      window.__TOKN_BACKEND_URL = backendUrl
+    }
+
     // Load the existing script.js after the component mounts
     // This allows us to keep the existing functionality while we migrate
     const script = document.createElement('script')
