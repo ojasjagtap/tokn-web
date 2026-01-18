@@ -137,6 +137,30 @@ const debouncedScroll = debounce(() => {
 window.addEventListener('scroll', debouncedScroll);
 
 // ============================================================================
+// MOBILE DETECTION FOR IDE LAUNCH
+// ============================================================================
+
+function isMobileDevice() {
+    return window.innerWidth < 1024;
+}
+
+// Intercept Launch button clicks on mobile
+document.addEventListener('DOMContentLoaded', () => {
+    const launchButtons = document.querySelectorAll('a.btn-primary');
+
+    launchButtons.forEach(button => {
+        if (button.textContent.trim() === 'Launch') {
+            button.addEventListener('click', (e) => {
+                if (isMobileDevice()) {
+                    e.preventDefault();
+                    window.location.href = '../mobile.html';
+                }
+            });
+        }
+    });
+});
+
+// ============================================================================
 // ANALYTICS (Placeholder)
 // ============================================================================
 
