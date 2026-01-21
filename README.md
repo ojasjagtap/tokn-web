@@ -6,7 +6,7 @@ A visual flow-based IDE for prompt engineering, testing, and optimization with L
 
 ## Overview
 
-tokn is a web application that provides a node-based interface for building, testing, and optimizing prompts across multiple AI model providers. Design complex LLM workflows visually, test prompts with different models, and automatically optimize them using evolutionary algorithms.
+Tokn is a web application that provides a node-based interface for building, testing, and optimizing prompts across multiple AI model providers. It lets you visually design complex LLM workflows, compare performance across models, and automatically optimize prompts end to end.
 
 <!-- ## 🚀 Quick Start
 
@@ -31,8 +31,8 @@ npm run dev
 - **Prompt Node** - Define system and user prompts
 - **Model Node** - Execute LLM inference with configurable parameters
 - **Tool Node** - Create custom JavaScript tools for LLMs to call
-- **DSPy Node** - Optimize prompts using the DSPy framework with automatic few-shot learning
-- **MLflow Node** - Optimize prompts using evolutionary algorithms with MLflow experiment tracking
+- **MIPROv2 Node** - Optimize prompts using the DSPy framework
+- **GEPA Node** - Optimize prompts using MLflow's GEPA library
 
 ### Multi-Provider Support
 - **OpenAI** - GPT-4, GPT-4o, GPT-3.5 models via API
@@ -50,14 +50,10 @@ npm run dev
 ### DSPy Integration
 - Prompt optimization using the DSPy framework
 - Automatic few-shot example selection
-- Signature-based prompt compilation
-- Test dataset evaluation with real-time progress tracking
 
 ### MLflow Integration
-- Evolutionary prompt optimization using MLflow's GEPA library
+- Prompt optimization using MLflow's GEPA library
 - Multi-provider model ensemble for optimization
-- Experiment tracking and metrics visualization
-- Population-based search with configurable mutation and elite selection
 
 ### Workflow Management
 - Save and load workflows (.toknflow files)
@@ -68,7 +64,7 @@ npm run dev
 - Encrypted API key storage using Web Crypto API (AES-GCM 256-bit)
 - Keys stored in browser IndexedDB, never in plaintext
 - Sandboxed tool execution in Web Workers
-- Optional backend for DSPy/GEPA (API keys transmitted over HTTPS only)
+- Optional backend for MIPROv2/GEPA (API keys transmitted over HTTPS only)
 
 <!-- ## 🐳 Docker Deployment
 
@@ -155,7 +151,7 @@ tokn/
 └── package.json             # Dependencies and metadata
 ``` -->
 
-### Usage
+## Usage
 
 1. **Create a Workflow**
    - Add nodes from the top toolbar
@@ -168,16 +164,16 @@ tokn/
    - Click "Run Flow" to execute
 
 3. **Optimize Prompts with DSPy**
-   - Add a DSPy node
-   - Define test cases and input/output signatures
+   - Add a MIPROv2 node
+   - Define test cases with expected outputs
    - Configure optimization parameters
-   - Run to automatically improve your prompt with few-shot learning
+   - Run to automatically improve your prompt
 
 4. **Optimize Prompts with MLflow**
-   - Add an MLflow GEPA node
+   - Add a GEPA node
    - Define test cases with expected outputs
-   - Configure evolutionary algorithm parameters (population size, generations, mutation rate)
-   - Run to optimize your prompt using population-based search with MLflow tracking
+   - Configure optimization parameters
+   - Run to automatically improve your prompt
 
 ## Use Cases
 
