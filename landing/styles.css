@@ -530,8 +530,6 @@ section {
 
 .fade-in-up {
     animation: fadeInUp 0.6s ease-out forwards;
-    opacity: 1;
-    transform: translateY(0);
 }
 
 @keyframes slideLeft {
