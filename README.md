@@ -8,7 +8,7 @@ A visual flow-based IDE for prompt engineering, testing, and optimization with L
 
 tokn is a web application that provides a node-based interface for building, testing, and optimizing prompts across multiple AI model providers. Design complex LLM workflows visually, test prompts with different models, and automatically optimize them using evolutionary algorithms.
 
-## 🚀 Quick Start
+<!-- ## 🚀 Quick Start
 
 **New to tokn?** Check out the [Quick Start Guide](QUICKSTART.md) to get running in 3 minutes!
 
@@ -17,6 +17,7 @@ npm install
 npm run dev
 # Open http://localhost:3000 and add your API keys in Settings
 ```
+-->
 
 ## Features
 
@@ -69,7 +70,7 @@ npm run dev
 - Sandboxed tool execution in Web Workers
 - Optional backend for DSPy/GEPA (API keys transmitted over HTTPS only)
 
-## 🐳 Docker Deployment
+<!-- ## 🐳 Docker Deployment
 
 tokn can be easily deployed using Docker and Docker Compose for both development and production environments.
 
@@ -114,8 +115,9 @@ The Docker setup includes:
 
 - **[DOCKER.md](DOCKER.md)** - Complete Docker usage guide
 - **[DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md)** - Deployment to production
+-->
 
-## File Structure
+<!-- ## File Structure
 
 ```
 tokn/
@@ -151,7 +153,7 @@ tokn/
 ├── index.html               # Vite entry point
 ├── vite.config.js           # Vite configuration
 └── package.json             # Dependencies and metadata
-```
+``` -->
 
 ### Usage
 
