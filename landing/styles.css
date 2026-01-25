@@ -305,9 +305,9 @@ section {
 }
 
 .feature-card:hover {
-    border-color: var(--accent-blue);
+    /* border-color: var(--accent-blue); */
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(74, 144, 226, 0.2);
+    /* box-shadow: 0 8px 24px rgba(74, 144, 226, 0.2); */
 }
 
 .feature-icon {
