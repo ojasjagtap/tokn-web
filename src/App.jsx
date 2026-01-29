@@ -138,7 +138,7 @@ function App() {
               <select id="logsFilter" className="logs-filter">
                 <option value="all">All</option>
                 <option value="errors">Errors</option>
-                <option value="current">Current Run</option>
+                {/* <option value="current">Current Run</option> */}
               </select>
               <button id="collapseLogsButton" className="logs-icon-button" title="Collapse">−</button>
             </div>

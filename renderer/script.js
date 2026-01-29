@@ -3270,6 +3270,22 @@ function setupLogsResize() {
 
         logsPanel.style.height = `${clampedHeight}px`;
 
+        // Update collapsed state and button based on dragged height
+        const collapseButton = document.getElementById('collapseLogsButton');
+        if (clampedHeight <= minHeight && !state.logsCollapsed) {
+            // Panel dragged to minimum - mark as collapsed
+            state.logsCollapsed = true;
+            logsPanel.classList.add('collapsed');
+            collapseButton.textContent = '+';
+            collapseButton.title = 'Expand';
+        } else if (clampedHeight > minHeight && state.logsCollapsed) {
+            // Panel dragged back up - mark as expanded
+            state.logsCollapsed = false;
+            logsPanel.classList.remove('collapsed');
+            collapseButton.textContent = '−';
+            collapseButton.title = 'Collapse';
+        }
+
         // Re-truncate log messages to fit the new panel width
         truncateLongTokensInLogs();
     });
@@ -3279,8 +3295,10 @@ function setupLogsResize() {
             isResizing = false;
             logsPanel.classList.remove('resizing');
             document.body.style.cursor = '';
-            // Save the resized height so collapse/expand remembers it
-            state.logsExpandedHeight = logsPanel.offsetHeight;
+            // Save the resized height so collapse/expand remembers it (only if not collapsed)
+            if (!state.logsCollapsed) {
+                state.logsExpandedHeight = logsPanel.offsetHeight;
+            }
         }
     });
 }
