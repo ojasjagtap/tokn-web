@@ -35,9 +35,9 @@ npm run dev
 - **GEPA Node** - Optimize prompts using MLflow's GEPA library
 
 ### Multi-Provider Support
-- **OpenAI** - GPT-4, GPT-4o, GPT-3.5 models via API
-- **Claude (Anthropic)** - Claude 3.5 Sonnet, Claude 3 Opus, Haiku models
-- **Gemini (Google)** - Gemini 2.0 Flash, Gemini 1.5 Pro models
+- **OpenAI**
+- **Claude (Anthropic)**
+- **Gemini (Google)**
 - Provider-agnostic architecture for easy extensibility
 
 ### Tool Calling System
