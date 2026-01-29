@@ -534,7 +534,7 @@ async function executeDSPyOptimizeNode(
         const apiKey = await providerRegistry.getApiKey(modelNode.data.provider);
 
         if (!apiKey) {
-            const msg = createTaggedMessage(dspyOptimizeNode.data.title, `No API key for ${modelNode.data.provider}`);
+            const msg = createTaggedMessage(dspyOptimizeNode.data.title, `Add your ${modelNode.data.provider} API key in Settings.`);
             addLog('error', msg, dspyOptimizeNode.id);
             setNodeStatus(dspyOptimizeNode.id, 'error');
             return;

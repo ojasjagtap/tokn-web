@@ -117,7 +117,7 @@ class ProviderRegistry {
 
         const apiKey = await this.getApiKey(providerId);
         if (!apiKey) {
-            throw new Error(`No API key configured for ${providerId}`);
+            throw new Error(`Add your ${providerId} API key in Settings.`);
         }
 
         let models = [];
@@ -220,7 +220,7 @@ class ProviderRegistry {
         // Get API key
         const apiKey = await this.getApiKey(providerId);
         if (!apiKey) {
-            throw new Error(`No API key configured for ${providerId}`);
+            throw new Error(`Add your ${providerId} API key in Settings.`);
         }
 
         // Create adapter

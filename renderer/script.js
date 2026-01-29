@@ -2122,7 +2122,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
             const apiKey = await providerRegistry.getApiKey('openai');
 
             if (!apiKey) {
-                throw new Error('OpenAI API key not configured');
+                throw new Error('Add your OpenAI API key in Settings.');
             }
 
             headers = {
@@ -2134,7 +2134,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
             const apiKey = await providerRegistry.getApiKey('claude');
 
             if (!apiKey) {
-                throw new Error('Claude API key not configured');
+                throw new Error('Add your Claude API key in Settings.');
             }
 
             headers = {
@@ -2148,7 +2148,7 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
             const apiKey = await providerRegistry.getApiKey('gemini');
 
             if (!apiKey) {
-                throw new Error('Gemini API key not configured');
+                throw new Error('Add your Gemini API key in Settings.');
             }
 
             // Gemini streaming endpoint with SSE format

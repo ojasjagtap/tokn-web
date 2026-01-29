@@ -589,7 +589,7 @@ async function executeGepaOptimizeNode(
         } else if (errorMsg.includes('Python not found')) {
             errorMsg += ' - Install Python 3.8+ and add to PATH';
         } else if (errorMsg.includes('API key')) {
-            errorMsg += ' - Check your API key configuration';
+            errorMsg += ' - Add your API key in Settings';
         }
 
         const taggedError = createTaggedMessage(gepaOptimizeNode.data.title, errorMsg);
