@@ -97,6 +97,24 @@ body.panning {
     cursor: not-allowed;
 }
 
+.settings-icon-button {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: #888;
+    transition: color 0.2s, background 0.2s;
+}
+
+.settings-icon-button:hover {
+    color: #ccc;
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .status-chip {
     padding: 4px 12px;
     border-radius: 12px;
