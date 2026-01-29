@@ -3170,6 +3170,7 @@ function setupInspectorResize() {
     let isResizing = false;
     let startX = 0;
     let startWidth = 0;
+    const defaultWidth = 280;
 
     rightPanel.addEventListener('mousedown', (e) => {
         const rect = rightPanel.getBoundingClientRect();
@@ -3183,6 +3184,29 @@ function setupInspectorResize() {
             rightPanel.classList.add('resizing');
             document.body.style.cursor = 'ew-resize';
             e.preventDefault();
+        }
+    });
+
+    // Double-click on edge to reset to default width
+    rightPanel.addEventListener('dblclick', (e) => {
+        const rect = rightPanel.getBoundingClientRect();
+        const edgeThreshold = 4;
+
+        // Check if double-click is on the left edge
+        if (e.clientX >= rect.left && e.clientX <= rect.left + edgeThreshold) {
+            rightPanel.style.width = `${defaultWidth}px`;
+
+            // Update logs panel right position
+            const logsPanel = document.getElementById('logsPanel');
+            if (logsPanel) {
+                logsPanel.style.right = `${defaultWidth}px`;
+            }
+
+            // Update zoom controls position
+            updateZoomControlsPosition();
+
+            // Re-truncate log messages
+            truncateLongTokensInLogs();
         }
     });
 
@@ -3230,6 +3254,7 @@ function setupLogsResize() {
     let isResizing = false;
     let startY = 0;
     let startHeight = 0;
+    const defaultHeight = 150;
 
     logsPanel.addEventListener('mousedown', (e) => {
         // Don't allow resize when collapsed
@@ -3247,6 +3272,34 @@ function setupLogsResize() {
             document.body.style.cursor = 'ns-resize';
             e.preventDefault();
             e.stopPropagation();
+        }
+    });
+
+    // Double-click on edge to reset to default height
+    logsPanel.addEventListener('dblclick', (e) => {
+        const rect = logsPanel.getBoundingClientRect();
+        const edgeThreshold = 4;
+
+        // Check if double-click is on the top edge
+        if (e.clientY >= rect.top && e.clientY <= rect.top + edgeThreshold) {
+            logsPanel.style.height = `${defaultHeight}px`;
+            state.logsExpandedHeight = defaultHeight;
+
+            // If collapsed, expand it
+            if (state.logsCollapsed) {
+                state.logsCollapsed = false;
+                logsPanel.classList.remove('collapsed');
+                const collapseButton = document.getElementById('collapseLogsButton');
+                collapseButton.textContent = '−';
+                collapseButton.title = 'Collapse';
+
+                // Scroll to bottom when expanding
+                const logsBody = document.getElementById('logsBody');
+                logsBody.scrollTop = logsBody.scrollHeight;
+            }
+
+            // Re-truncate log messages
+            truncateLongTokensInLogs();
         }
     });
 
