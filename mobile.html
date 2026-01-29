@@ -56,12 +56,6 @@
             max-width: 400px;
         }
 
-        .logo {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 24px;
-        }
-
         .icon {
             width: 48px;
             height: 48px;
@@ -94,6 +88,7 @@
             font-size: 15px;
             transition: all 0.3s ease;
             border: none;
+            cursor: pointer;
         }
 
         .btn-primary:hover {
@@ -103,8 +98,6 @@
 </head>
 <body>
     <div class="container">
-        <img src="/logo-white.png" alt="Tokn" class="logo">
-
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
             <line x1="8" y1="21" x2="16" y2="21"/>
@@ -114,7 +107,7 @@
         <h1>Desktop Required</h1>
         <p>Tokn's visual IDE is optimized for desktop browsers. Please visit on a computer for the full experience.</p>
 
-        <a href="/" class="btn-primary">Back to Home</a>
+        <button onclick="history.back()" class="btn-primary">Back to Home</button>
     </div>
 
     <script>
