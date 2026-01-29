@@ -4,6 +4,8 @@
  * Replaces Node.js child_process with browser Web Workers
  */
 
+import { createTaggedMessage } from './log-utils.js';
+
 /**
  * Execute a tool in a Web Worker
  *
@@ -35,7 +37,7 @@ async function executeToolInWorker({ code, args, addLog, signal }) {
                 if (!isKilled && worker) {
                     isKilled = true;
                     worker.terminate();
-                    addLog('error', 'Tool execution timeout (30s limit)');
+                    addLog('error', createTaggedMessage('Tools', 'Tool execution timeout (30s limit)'));
                     reject(new Error('Tool execution timeout'));
                 }
             }, timeoutMs);
@@ -46,7 +48,7 @@ async function executeToolInWorker({ code, args, addLog, signal }) {
                     if (!isKilled && worker) {
                         isKilled = true;
                         worker.terminate();
-                        addLog('warn', 'Tool execution canceled');
+                        addLog('warn', createTaggedMessage('Tools', 'Tool execution canceled'));
                         reject(new Error('Tool execution canceled'));
                     }
                 });
@@ -69,7 +71,7 @@ async function executeToolInWorker({ code, args, addLog, signal }) {
                         : JSON.stringify(response.result);
 
                     if (resultStr.length > maxOutputBytes) {
-                        addLog('warn', 'Tool output truncated to 5MB');
+                        addLog('warn', createTaggedMessage('Tools', 'Tool output truncated to 5MB'));
 
                         if (typeof response.result === 'string') {
                             response.result = response.result.substring(0, maxOutputBytes);

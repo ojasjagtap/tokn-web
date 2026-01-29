@@ -205,18 +205,14 @@ function updateLogsUI() {
             const clickableClass = hasNode ? 'log-clickable' : '';
             const dataNodeAttr = hasNode ? `data-node-id="${log.nodeId}"` : '';
 
-            // Get node title if available
-            let nodeTitle = '';
-            if (hasNode) {
-                const node = state.nodes.get(log.nodeId);
-                nodeTitle = node.data.title ? `[${node.data.title}] ` : '';
-            }
+            // Don't add nodeTitle prefix - messages already have proper tags from createTaggedMessage
+            // The nodeId is still used to make logs clickable
 
             return `
                 <div class="log-entry ${levelClass} ${clickableClass}" ${dataNodeAttr} data-log-index="${index}">
                     <span class="log-timestamp">${log.timestamp}</span>
                     <span class="log-level">${log.level}</span>
-                    <span class="log-message" data-full-message="${escapeHtml(nodeTitle + log.message)}">${nodeTitle}${log.message}</span>
+                    <span class="log-message" data-full-message="${escapeHtml(log.message)}">${log.message}</span>
                 </div>
             `;
         }).join('');
