@@ -12,7 +12,13 @@
     "type": "git",
     "url": "git+https://github.com/ojasjagtap/tokn-web.git"
   },
-  "keywords": ["prompt-engineering", "llm", "ai", "workflow", "web-app"],
+  "keywords": [
+    "prompt-engineering",
+    "llm",
+    "ai",
+    "workflow",
+    "web-app"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -25,6 +31,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "baseline-browser-mapping": "^2.9.19",
     "vite": "^6.0.3"
   }
 }

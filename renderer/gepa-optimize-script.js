@@ -224,26 +224,7 @@ function renderGepaOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             const runButton = document.getElementById('inspectorRunOptimize');
             if (runButton && context && context.runOptimizeNode) {
                 runButton.addEventListener('click', async () => {
-                    // Validate before running
-                    const validation = validateGepaOptimizeNode(node, context.edges, context.nodes);
-
-                    // Show warnings
-                    if (validation.warnings && validation.warnings.length > 0) {
-                        validation.warnings.forEach(warning => {
-                            const msg = createTaggedMessage(node.data.title, warning);
-                            context.addLog('warn', msg, node.id);
-                        });
-                    }
-
-                    // Show errors and stop if any
-                    if (validation.errors && validation.errors.length > 0) {
-                        validation.errors.forEach(error => {
-                            const msg = createTaggedMessage(node.data.title, error);
-                            context.addLog('error', msg, node.id);
-                        });
-                        return;
-                    }
-
+                    // Validation will be done in execution function, just run
                     await context.runOptimizeNode(node.id);
                 });
             }
@@ -382,23 +363,17 @@ function isGepaOptimizeNodeReady(gepaOptimizeNode, edges, nodes) {
 function applyOptimizedPrompt(gepaOptimizeNode, edges, nodes, addLog, updateNodeDisplay) {
     // Check if we have results
     if (!gepaOptimizeNode.data.optimizedPromptText || gepaOptimizeNode.data.finalScore === 0) {
-        const msg = createTaggedMessage(gepaOptimizeNode.data.title, 'No optimization results to apply');
-        addLog('error', msg, gepaOptimizeNode.id);
         return;
     }
 
     // Find connected model node, then find its prompt node
     const modelNode = findConnectedModelNode(gepaOptimizeNode.id, edges, nodes);
     if (!modelNode) {
-        const msg = createTaggedMessage(gepaOptimizeNode.data.title, 'No model node connected');
-        addLog('error', msg, gepaOptimizeNode.id);
         return;
     }
 
     const promptNode = findPromptNodeForModel(modelNode.id, edges, nodes);
     if (!promptNode) {
-        const msg = createTaggedMessage(gepaOptimizeNode.data.title, 'No prompt node connected to model');
-        addLog('error', msg, gepaOptimizeNode.id);
         return;
     }
 
@@ -455,11 +430,9 @@ async function executeGepaOptimizeNode(
         return;
     }
 
-    // Find connected model node
+    // Find connected model node (already validated, but double-check)
     const modelNode = findConnectedModelNode(gepaOptimizeNode.id, edges, nodes);
     if (!modelNode) {
-        const msg = createTaggedMessage(gepaOptimizeNode.data.title, 'No model node connected');
-        addLog('error', msg, gepaOptimizeNode.id);
         setNodeStatus(gepaOptimizeNode.id, 'error');
         return;
     }

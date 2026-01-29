@@ -351,7 +351,7 @@ async function createNode(type, worldX, worldY) {
         node.data = {
             title: 'Model',
             provider: defaultProvider,
-            model: state.availableModels[0] || '',
+            model: '', // Start with no model selected
             temperature: 0.7,
             maxTokens: 512,
             output: ''
@@ -632,12 +632,9 @@ function createEdge(sourceNodeId, sourcePin, targetNodeId, targetPin) {
 
     state.edges.set(id, edge);
 
-    // Log tool registration
+    // Nodes retrieved for validation
     const sourceNode = state.nodes.get(sourceNodeId);
     const targetNode = state.nodes.get(targetNodeId);
-    // if (sourceNode?.type === 'tool' && targetNode?.type === 'model' && targetPin === 'tools') {
-    //     addLog('info', `tool_registered: ${sourceNode.data.name} → ${targetNode.data.title} (${sourceNodeId} → ${targetNodeId})`);
-    // }
 
     renderEdges();
     updateRunButton();
@@ -647,16 +644,6 @@ function createEdge(sourceNodeId, sourcePin, targetNodeId, targetPin) {
 
 function deleteEdge(id) {
     const edge = state.edges.get(id);
-
-    // Log tool unregistration
-    // if (edge) {
-    //     const sourceNode = state.nodes.get(edge.sourceNodeId);
-    //     const targetNode = state.nodes.get(edge.targetNodeId);
-    //     if (sourceNode?.type === 'tool' && targetNode?.type === 'model' && edge.targetPin === 'tools') {
-    //         addLog('info', `tool_unregistered: ${sourceNode.data.name} → ${targetNode.data.title} (${edge.sourceNodeId} → ${edge.targetNodeId})`);
-    //     }
-    // }
-
     state.edges.delete(id);
     if (state.selectedEdgeId === id) {
         state.selectedEdgeId = null;
@@ -694,8 +681,6 @@ function isValidConnection(sourceNodeId, sourcePin, targetNodeId, targetPin) {
         return true;
     }
 
-    // Reject invalid connections with log
-    // addLog('error', 'Incompatible connection attempted');
     return false;
 }
 
@@ -893,12 +878,14 @@ function updateInspector() {
         const loadProviderModels = async (providerId) => {
             try {
                 const models = await providerRegistry.listModels(providerId);
-                return models.map(m =>
+                const noneOption = '<option value="">None</option>';
+                const modelOptions = models.map(m =>
                     `<option value="${m.id}" ${m.id === node.data.model ? 'selected' : ''}>${m.name}</option>`
                 ).join('');
+                return noneOption + modelOptions;
             } catch (error) {
                 console.error(`Failed to load models for ${providerId}:`, error);
-                return '<option value="">Error loading models</option>';
+                return '<option value="">None</option>';
             }
         };
 
@@ -959,7 +946,7 @@ function updateInspector() {
         (async () => {
             const modelSelect = document.getElementById('inspectorModel');
             const options = await loadProviderModels(node.data.provider);
-            modelSelect.innerHTML = options || '<option value="">No models available</option>';
+            modelSelect.innerHTML = options || '<option value="">None</option>';
         })();
 
         document.getElementById('inspectorTitle').addEventListener('input', (e) => {
@@ -977,12 +964,7 @@ function updateInspector() {
             const modelSelect = document.getElementById('inspectorModel');
             modelSelect.innerHTML = '<option value="">Loading...</option>';
             const options = await loadProviderModels(newProvider);
-            modelSelect.innerHTML = options || '<option value="">No models available</option>';
-
-            // Select first model if available
-            if (modelSelect.options.length > 0 && modelSelect.options[0].value) {
-                node.data.model = modelSelect.options[0].value;
-            }
+            modelSelect.innerHTML = options || '<option value="">None</option>';
 
             updateNodeDisplay(node.id);
             markWorkflowDirty();
@@ -1574,12 +1556,15 @@ async function runFlow() {
 
     // Validate: check for empty prompts, missing models, and incomplete optimize nodes
     let hasError = false;
+    const validatedNodes = new Set(); // Track validated nodes to avoid duplicate logs
+
     for (const edge of state.edges.values()) {
         const sourceNode = state.nodes.get(edge.sourceNodeId);
         const targetNode = state.nodes.get(edge.targetNodeId);
 
-        // Validate Prompt nodes
-        if (sourceNode?.type === 'prompt') {
+        // Validate Prompt nodes (only once per node)
+        if (sourceNode?.type === 'prompt' && !validatedNodes.has(sourceNode.id)) {
+            validatedNodes.add(sourceNode.id);
             // At least one of system or user prompt must be filled
             const hasSystemPrompt = sourceNode.data.systemPrompt && sourceNode.data.systemPrompt.trim();
             const hasUserPrompt = sourceNode.data.userPrompt && sourceNode.data.userPrompt.trim();
@@ -1590,20 +1575,23 @@ async function runFlow() {
             }
         }
 
-        // Validate Model nodes
-        if (targetNode?.type === 'model') {
+        // Validate Model nodes (only once per node)
+        if (targetNode?.type === 'model' && !validatedNodes.has(targetNode.id)) {
+            validatedNodes.add(targetNode.id);
             if (!targetNode.data.model || targetNode.data.model.trim() === '') {
                 addLog('error', createTaggedMessage(targetNode.data.title, 'Model must be selected'), targetNode.id);
                 hasError = true;
             }
         }
 
-        // Validate DSPy Optimize nodes that will run in the flow
+        // Validate DSPy Optimize nodes that will run in the flow (only once per node)
         if (sourceNode?.type === 'model' &&
             targetNode?.type === 'dspy-optimize' &&
             edge.sourcePin === 'output' &&
-            edge.targetPin === 'input') {
+            edge.targetPin === 'input' &&
+            !validatedNodes.has(targetNode.id)) {
 
+            validatedNodes.add(targetNode.id);
             const validationErrors = validateDSPyOptimizeNode(targetNode, state.edges, state.nodes);
             if (validationErrors.length > 0) {
                 for (const error of validationErrors) {
@@ -1613,12 +1601,14 @@ async function runFlow() {
             }
         }
 
-        // Validate GEPA Optimize nodes that will run in the flow
+        // Validate GEPA Optimize nodes that will run in the flow (only once per node)
         if (sourceNode?.type === 'model' &&
             targetNode?.type === 'gepa-optimize' &&
             edge.sourcePin === 'output' &&
-            edge.targetPin === 'input') {
+            edge.targetPin === 'input' &&
+            !validatedNodes.has(targetNode.id)) {
 
+            validatedNodes.add(targetNode.id);
             const validation = validateGepaOptimizeNode(targetNode, state.edges, state.nodes);
             if (validation.errors && validation.errors.length > 0) {
                 for (const error of validation.errors) {
@@ -1799,7 +1789,7 @@ async function runFlow() {
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                addLog('warn', createTaggedMessage('Flow', 'Optimization canceled'));
+                addLog('warn', createTaggedMessage(optimizeNode.data.title, 'Canceled'));
                 break;
             } else {
                 addLog('error', createTaggedMessage(optimizeNode.data.title, error.message));
@@ -2294,14 +2284,16 @@ async function callModelStreaming(prompt, model, temperature, maxTokens, onChunk
                     // Store the result in the tool node
                     if (normalized.kind === 'bytes') {
                         toolNode.data.lastOutput = `[Binary result: ${normalized.result.length} bytes]`;
-                        addLog('info', createTaggedMessage(name, `Completed (${duration}s, ${normalized.result.length} bytes)`));
                     } else if (normalized.kind === 'json') {
                         toolNode.data.lastOutput = JSON.stringify(normalized.result, null, 2);
-                        addLog('info', createTaggedMessage(name, `Completed (${duration}s)`));
                     } else {
                         toolNode.data.lastOutput = String(normalized.result);
-                        addLog('info', createTaggedMessage(name, `Completed (${duration}s)`));
                     }
+
+                    // Log completion with appropriate detail
+                    const sizeInfo = normalized.kind === 'bytes' ? `, ${normalized.result.length} bytes` : '';
+                    addLog('info', createTaggedMessage(name, `Completed (${duration}s${sizeInfo})`));
+
                     // Update the node display to show the result
                     updateNodeDisplay(toolNode.id);
                 } else {
@@ -2397,7 +2389,6 @@ async function loadModels() {
             addLog('warn', createTaggedMessage('Ollama', 'No local models found'));
         }
     } catch (err) {
-        // addLog('error', `Failed to load models: ${err.message}`);
         state.availableModels = [];
     }
 }

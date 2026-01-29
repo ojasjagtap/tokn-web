@@ -308,16 +308,7 @@ function renderDSPyOptimizeInspector(node, updateNodeDisplay, edges, nodes, stat
             const runButton = document.getElementById('inspectorRunOptimize');
             if (runButton && context && context.runOptimizeNode) {
                 runButton.addEventListener('click', async () => {
-                    // Validate before running
-                    const errors = validateDSPyOptimizeNode(node, context.edges, context.nodes);
-                    if (errors.length > 0) {
-                        errors.forEach(error => {
-                            const taggedMsg = createTaggedMessage(node.data.title, error);
-                            context.addLog('error', taggedMsg, node.id);
-                        });
-                        return;
-                    }
-
+                    // Validation will be done in execution function, just run
                     await context.runOptimizeNode(node.id);
                 });
             }
@@ -439,23 +430,17 @@ function isDSPyOptimizeNodeReady(dspyOptimizeNode, edges, nodes) {
 function applyOptimizedPrompt(dspyOptimizeNode, edges, nodes, addLog, updateNodeDisplay) {
     // Check if we have results
     if (!dspyOptimizeNode.data.optimizedSignature || dspyOptimizeNode.data.validationScore === 0) {
-        const msg = createTaggedMessage(dspyOptimizeNode.data.title, 'No optimization results to apply');
-        addLog('error', msg, dspyOptimizeNode.id);
         return;
     }
 
     // Find connected model node, then find its prompt node
     const modelNode = findConnectedModelNode(dspyOptimizeNode.id, edges, nodes);
     if (!modelNode) {
-        const msg = createTaggedMessage(dspyOptimizeNode.data.title, 'No model node connected');
-        addLog('error', msg, dspyOptimizeNode.id);
         return;
     }
 
     const promptNode = findPromptNodeForModel(modelNode.id, edges, nodes);
     if (!promptNode) {
-        const msg = createTaggedMessage(dspyOptimizeNode.data.title, 'No prompt node connected to model');
-        addLog('error', msg, dspyOptimizeNode.id);
         return;
     }
 
@@ -506,11 +491,9 @@ async function executeDSPyOptimizeNode(
         return;
     }
 
-    // Find connected model node
+    // Find connected model node (already validated, but double-check)
     const modelNode = findConnectedModelNode(dspyOptimizeNode.id, edges, nodes);
     if (!modelNode) {
-        const msg = createTaggedMessage(dspyOptimizeNode.data.title, 'No model node connected');
-        addLog('error', msg, dspyOptimizeNode.id);
         setNodeStatus(dspyOptimizeNode.id, 'error');
         return;
     }
