@@ -3257,9 +3257,6 @@ function setupLogsResize() {
     const defaultHeight = 150;
 
     logsPanel.addEventListener('mousedown', (e) => {
-        // Don't allow resize when collapsed
-        if (state.logsCollapsed) return;
-
         const rect = logsPanel.getBoundingClientRect();
         const edgeThreshold = 4;
 
