@@ -97,7 +97,7 @@ function renderToolInspector(node, updateNodeDisplay, addLog) {
 
     const html = `
         <div class="inspector-section">
-            <label>Name</label>
+            <label>Title</label>
             <input type="text" id="inspectorToolName" class="inspector-input" value="${node.data.name}">
         </div>
         <div class="inspector-section">
