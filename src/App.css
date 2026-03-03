@@ -372,13 +372,15 @@ body.panning {
 .header-top {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .header-left {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
+    flex: 1;
+    min-width: 0;
 }
 
 .collapse-toggle,
@@ -425,6 +427,8 @@ body.panning {
     font-size: 13px;
     font-weight: 600;
     color: #fff;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .node-status-badge {
@@ -434,6 +438,7 @@ body.panning {
     color: #aaa;
     border-radius: 3px;
     text-transform: uppercase;
+    flex-shrink: 0;
 }
 
 .flow-node[data-status="running"] .node-status-badge {
